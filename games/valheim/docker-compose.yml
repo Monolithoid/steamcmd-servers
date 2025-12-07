@@ -2,18 +2,16 @@ version: "3.8"
 
 services:
   valheim:
-    build: .
-    container_name: valheim-server
-    environment:
-      - SERVER_NAME=Valheim Server
-      - WORLD_NAME=Dedicated
-      - SERVER_PORT=2456
-    ports:
-      - "2456-2458:2456-2458/udp"
-    volumes:
-      - valheim-data:/data
+    image: monolithoid/valheim-server:latest
+    container_name: valheim
     restart: unless-stopped
-
-volumes:
-  valheim-data:
-    driver: local
+    environment:
+      # Tu peux override si besoin
+      # SERVER_CMD: >
+      #   ./valheim_server.x86_64 -name "Mon serveur"
+      #   -world "Monde1" -port 2456 -password "supersecret" -public 1
+    volumes:
+      - ./data:/opt/server
+    ports:
+      - "2456:2456/udp"
+      - "2457:2457/udp"
