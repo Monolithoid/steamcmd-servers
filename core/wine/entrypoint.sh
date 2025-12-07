@@ -1,27 +1,41 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-setup_wine_prefix() {
-    if [[ ! -d "${WINEPREFIX}" ]]; then
-        echo "Initializing Wine prefix at ${WINEPREFIX}"
-        wineboot --init
-    fi
-}
+: "${STEAMCMD_DIR:=/opt/steamcmd}"
+: "${SERVER_DIR:=/opt/server}"
+: "${WINEPREFIX:=/home/steam/.wine}"
 
-run_steamcmd() {
-    if [[ -n "${STEAMCMD_ARGS:-}" ]]; then
-        echo "Running SteamCMD with custom arguments through Wine"
-        wine steamcmd +force_install_dir Z:/data ${STEAMCMD_ARGS} +quit
-    else
-        echo "Launching interactive SteamCMD via Wine"
-        exec wine steamcmd
-    fi
-}
+: "${STEAM_APP_ID:?STEAM_APP_ID must be set}"
+: "${STEAM_LOGIN:=anonymous}"
+: "${STEAM_PASSWORD:=}"
+: "${STEAM_BRANCH:=public}"
+: "${STEAM_VALIDATE:=0}"
 
-main() {
-    export WINEPREFIX="${WINEPREFIX:-/home/steam/.wine}"
-    setup_wine_prefix
-    run_steamcmd
-}
+: "${SERVER_EXE:=Server.exe}"
+: "${SERVER_ARGS:=}"
 
-main "$@"
+update_args="+login ${STEAM_LOGIN}"
+if [[ -n "${STEAM_PASSWORD}" && "${STEAM_LOGIN}" != "anonymous" ]]; then
+  update_args+=" ${STEAM_PASSWORD}"
+fi
+update_args+=" +force_install_dir ${SERVER_DIR}"
+update_args+=" +app_update ${STEAM_APP_ID}"
+if [[ -n "${STEAM_BRANCH}" && "${STEAM_BRANCH}" != "public" ]]; then
+  update_args+=" -beta ${STEAM_BRANCH}"
+fi
+if [[ "${STEAM_VALIDATE}" == "1" ]]; then
+  update_args+=" validate"
+fi
+update_args+=" +quit"
+
+echo "[steamcmd-wine-core] Updating app ${STEAM_APP_ID}..."
+"${STEAMCMD_DIR}/steamcmd.sh" ${update_args}
+
+echo "[steamcmd-wine-core] Starting Windows server via Wine: ${SERVER_EXE} ${SERVER_ARGS}"
+cd "${SERVER_DIR}"
+
+# Optionnel : Xvfb si nécessaire
+# Xvfb :99 -screen 0 1024x768x16 &
+# export DISPLAY=:99
+
+exec wine "${SERVER_EXE}" ${SERVER_ARGS}
