@@ -30,14 +30,14 @@ RUN mkdir -p "${STEAMCMD_DIR}" "${SERVER_DIR}" && \
 RUN useradd -m -d /home/steam -s /bin/bash steam && \
     chown -R steam:steam "${STEAMCMD_DIR}" "${SERVER_DIR}"
 
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 USER steam
 WORKDIR "${SERVER_DIR}"
 
 # pré-init Wine (si ça gueule, ce n'est pas bloquant)
 RUN winecfg || true
-
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["/entrypoint.sh"]
