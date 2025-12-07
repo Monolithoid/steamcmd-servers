@@ -34,7 +34,7 @@ echo "[steamcmd-wine-core] Updating app ${STEAM_APP_ID}..."
 echo "[steamcmd-wine-core] Starting Windows server via Wine: ${SERVER_EXE} ${SERVER_ARGS}"
 cd "${SERVER_DIR}"
 
-# Optionnel : Xvfb si nécessaire
+# Optional : Xvfb if necessary
 # Xvfb :99 -screen 0 1024x768x16 &
 # export DISPLAY=:99
 
