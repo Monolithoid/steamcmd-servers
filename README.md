@@ -1,5 +1,7 @@
 # steamcmd-servers by monolithoid
 
+L'objectif de ce projet est de fournir une base générique pour tout serveur dédié sous steamCMD et/ou Wine.
+
 Ce repo contient :
 
 - des images Docker **génériques** basées sur SteamCMD :
