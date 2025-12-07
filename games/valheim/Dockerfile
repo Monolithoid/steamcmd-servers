@@ -1,18 +1,9 @@
-FROM ghcr.io/steamcmd-servers/core-linux:latest
+FROM monolithoid/steamcmd-linux-core:latest
 
-ENV GAME_ID=896660 \
-    SERVER_NAME="Valheim Server" \
-    WORLD_NAME="Dedicated" \
-    SERVER_PORT=2456
+# Valheim dedicated server AppID
+ENV STEAM_APP_ID=896660
 
-RUN mkdir -p /data
+# Commande serveur par défaut (surchargable par env SERVER_CMD)
+ENV SERVER_CMD="./valheim_server.x86_64 -name \"Monolithoid Valheim\" -world \"Dedicated\" -port 2456 -password \"changeme\" -public 1"
 
-RUN steamcmd +force_install_dir /data +login anonymous +app_update ${GAME_ID} validate +quit
-
-EXPOSE 2456/udp
-EXPOSE 2457/udp
-EXPOSE 2458/udp
-
-VOLUME ["/data"]
-
-CMD ["/data/valheim_server.x86_64", "-name", "${SERVER_NAME}", "-port", "${SERVER_PORT}", "-world", "${WORLD_NAME}", "-public", "1"]
+WORKDIR /opt/server
