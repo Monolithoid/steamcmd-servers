@@ -2,18 +2,13 @@ version: "3.8"
 
 services:
   project-zomboid:
-    build: .
-    container_name: project-zomboid-server
+    image: monolithoid/project-zomboid-server:latest
+    container_name: project-zomboid
+    restart: unless-stopped
     environment:
-      - SERVER_PORT=16261
-      - QUERY_PORT=16262
+      # SERVER_CMD: "./start-server.sh -servername MonPZ -adminpassword supersecret"
+    volumes:
+      - ./data:/opt/server
     ports:
       - "16261:16261/udp"
-      - "16262:16262/udp"
-    volumes:
-      - pz-data:/data
-    restart: unless-stopped
-
-volumes:
-  pz-data:
-    driver: local
+      - "16262-16270:16262-16270/udp"
