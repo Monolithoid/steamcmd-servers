@@ -1,9 +1,9 @@
 # monolithoid/valheim-server
 
-Serveur dédié Valheim basé sur SteamCMD, avec mise à jour automatique à chaque démarrage.  
-Optimisé pour un usage simple via Docker ou Coolify.
+Valheim dedicated server based on SteamCMD, with automatic updates on every start.
+Optimized for simple use through Docker or Coolify.
 
-## Usage rapide
+## Quick start
 
 ```bash
 docker run -d \
@@ -12,3 +12,4 @@ docker run -d \
   -p 2457:2457/udp \
   -v $(pwd)/data:/opt/server \
   monolithoid/valheim-server:latest
+```
