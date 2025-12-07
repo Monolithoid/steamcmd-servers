@@ -1,22 +1,34 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-main() {
-    local steamcmd_root
-    steamcmd_root="${STEAMCMD_ROOT:-/home/steam/Steam}"
+: "${STEAMCMD_DIR:=/opt/steamcmd}"
+: "${SERVER_DIR:=/opt/server}"
 
-    if [[ ! -d "${steamcmd_root}" ]]; then
-        echo "Creating SteamCMD directory at ${steamcmd_root}"
-        mkdir -p "${steamcmd_root}"
-    fi
+: "${STEAM_APP_ID:?STEAM_APP_ID must be set}"
+: "${STEAM_LOGIN:=anonymous}"
+: "${STEAM_PASSWORD:=}"
+: "${STEAM_BRANCH:=public}"
+: "${STEAM_VALIDATE:=0}"
 
-    if [[ -n "${STEAMCMD_ARGS:-}" ]]; then
-        echo "Running SteamCMD with custom arguments"
-        steamcmd +force_install_dir /data ${STEAMCMD_ARGS} +quit
-    else
-        echo "No custom arguments provided; starting SteamCMD shell"
-        exec steamcmd
-    fi
-}
+: "${SERVER_CMD:=./server.sh}"
 
-main "$@"
+update_args="+login ${STEAM_LOGIN}"
+if [[ -n "${STEAM_PASSWORD}" && "${STEAM_LOGIN}" != "anonymous" ]]; then
+  update_args+=" ${STEAM_PASSWORD}"
+fi
+update_args+=" +force_install_dir ${SERVER_DIR}"
+update_args+=" +app_update ${STEAM_APP_ID}"
+if [[ -n "${STEAM_BRANCH}" && "${STEAM_BRANCH}" != "public" ]]; then
+  update_args+=" -beta ${STEAM_BRANCH}"
+fi
+if [[ "${STEAM_VALIDATE}" == "1" ]]; then
+  update_args+=" validate"
+fi
+update_args+=" +quit"
+
+echo "[steamcmd-linux-core] Updating app ${STEAM_APP_ID}..."
+"${STEAMCMD_DIR}/steamcmd.sh" ${update_args}
+
+echo "[steamcmd-linux-core] Starting server: ${SERVER_CMD}"
+cd "${SERVER_DIR}"
+exec ${SERVER_CMD}
