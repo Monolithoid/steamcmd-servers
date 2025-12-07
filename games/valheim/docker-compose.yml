@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  valheim:
+    build: .
+    container_name: valheim-server
+    environment:
+      - SERVER_NAME=Valheim Server
+      - WORLD_NAME=Dedicated
+      - SERVER_PORT=2456
+    ports:
+      - "2456-2458:2456-2458/udp"
+    volumes:
+      - valheim-data:/data
+    restart: unless-stopped
+
+volumes:
+  valheim-data:
+    driver: local

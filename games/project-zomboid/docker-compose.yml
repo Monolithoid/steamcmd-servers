@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  project-zomboid:
+    build: .
+    container_name: project-zomboid-server
+    environment:
+      - SERVER_PORT=16261
+      - QUERY_PORT=16262
+    ports:
+      - "16261:16261/udp"
+      - "16262:16262/udp"
+    volumes:
+      - pz-data:/data
+    restart: unless-stopped
+
+volumes:
+  pz-data:
+    driver: local
