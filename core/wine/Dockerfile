@@ -1,35 +1,43 @@
 FROM debian:12-slim
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    STEAMCMD_ROOT=/home/steam/Steam \
-    WINEARCH=win64
-
-RUN useradd --create-home --shell /bin/bash steam
+ENV DEBIAN_FRONTEND=noninteractive
+ENV STEAMCMD_DIR=/opt/steamcmd \
+    SERVER_DIR=/opt/server \
+    WINEPREFIX=/home/steam/.wine \
+    STEAM_LOGIN=anonymous \
+    STEAM_BRANCH=public \
+    STEAM_VALIDATE=0
 
 RUN dpkg --add-architecture i386 && \
     apt-get update && \
-    apt-get install --yes --no-install-recommends \
-        ca-certificates \
-        curl \
-        gnupg \
-        wine64 \
-        wine32 \
-        xvfb \
-        lib32gcc-s1 && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends \
+      ca-certificates \
+      curl \
+      lib32gcc-s1 \
+      lib32stdc++6 \
+      wine \
+      wine32 \
+      xvfb \
+      winbind \
+      tini \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /opt/steamcmd && \
-    curl -fsSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip -o /tmp/steamcmd.zip && \
-    apt-get update && apt-get install --yes unzip && \
-    unzip /tmp/steamcmd.zip -d /opt/steamcmd && \
-    rm /tmp/steamcmd.zip && \
-    apt-get purge --yes unzip && \
-    apt-get autoremove --yes && \
-    rm -rf /var/lib/apt/lists/*
+RUN mkdir -p "${STEAMCMD_DIR}" "${SERVER_DIR}" && \
+    cd "${STEAMCMD_DIR}" && \
+    curl -sSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz \
+      | tar -xz
+
+RUN useradd -m -d /home/steam -s /bin/bash steam && \
+    chown -R steam:steam "${STEAMCMD_DIR}" "${SERVER_DIR}"
 
 USER steam
-WORKDIR /opt/steamcmd
+WORKDIR "${SERVER_DIR}"
 
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+# pré-init Wine (si ça gueule, ce n'est pas bloquant)
+RUN winecfg || true
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["/entrypoint.sh"]
