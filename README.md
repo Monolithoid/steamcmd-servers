@@ -1,19 +1,19 @@
 # steamcmd-servers by monolithoid
 
-L'objectif de ce projet est de fournir une base générique pour tout serveur dédié sous steamCMD et/ou Wine.
+The goal of this project is to provide a generic base for any dedicated server running with SteamCMD and/or Wine.
 
-Ce repo contient :
+This repo contains:
 
-- des images Docker **génériques** basées sur SteamCMD :
+- **Generic** Docker images built on SteamCMD:
   - `monolithoid/steamcmd-linux-core`
   - `monolithoid/steamcmd-wine-core`
-- des images Docker **par jeu**, prêtes à l'emploi :
+- **Per-game** Docker images, ready to use:
   - `monolithoid/valheim-server`
   - `monolithoid/project-zomboid-server`
-  - (et d'autres à venir)
+  - (and more to come)
 
-Chaque jeu dans `games/<nom>` fournit :
+Each game in `games/<name>` provides:
 
-- un `Dockerfile` (basé sur un core)
-- un `docker-compose.yml` prêt à copier/coller (Coolify, Portainer, etc.)
-- un `README.md` spécifique au jeu
+- a `Dockerfile` (based on a core image)
+- a ready-to-copy/paste `docker-compose.yml` (Coolify, Portainer, etc.)
+- a game-specific `README.md`
