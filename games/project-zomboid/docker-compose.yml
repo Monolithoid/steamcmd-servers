@@ -8,7 +8,7 @@ services:
     environment:
       # SERVER_CMD: "./start-server.sh -servername MonPZ -adminpassword supersecret"
     volumes:
-      - ./data:/opt/server
+      - /opt/gaming/project-zomboid:/opt/server
     ports:
       - "16261:16261/udp"
       - "16262-16270:16262-16270/udp"
