@@ -10,6 +10,7 @@ This repo contains:
 - **Per-game** Docker images, ready to use:
   - `monolithoid/valheim-server`
   - `monolithoid/project-zomboid-server`
+  - `monolithoid/rust-server`
   - (and more to come)
 
 Each game in `games/<name>` provides:
