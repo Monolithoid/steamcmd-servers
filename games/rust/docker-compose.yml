@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  rust:
+    image: monolithoid/rust-server:latest
+    container_name: rust
+    restart: unless-stopped
+    environment:
+      # Exemple de surcharge :
+      # SERVER_CMD: >
+      #   ./RustDedicated -batchmode
+      #   +server.port 28015
+      #   +server.queryport 28017
+      #   +rcon.port 28016
+      #   +rcon.web 1
+      #   +rcon.password "supersecret"
+      #   +server.level "Procedural Map"
+      #   +server.seed 12345
+      #   +server.worldsize 3500
+      #   +server.maxplayers 50
+      #   +server.hostname "Mon serveur Rust"
+      #   +server.description "Serveur Rust basé sur SteamCMD"
+      #   +server.identity "rust-server"
+      #   +server.saveinterval 600
+    volumes:
+      - ./data:/opt/server
+    ports:
+      - "28015:28015/udp"
+      - "28016:28016/tcp"
+      - "28017:28017/tcp"
