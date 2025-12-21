@@ -11,7 +11,7 @@ services:
       #   ./valheim_server.x86_64 -name "Mon serveur"
       #   -world "Monde1" -port 2456 -password "supersecret" -public 1
     volumes:
-      - ./data:/opt/server
+      - /opt/gaming/valheim:/opt/server
     ports:
       - "2456:2456/udp"
       - "2457:2457/udp"

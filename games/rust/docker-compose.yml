@@ -23,7 +23,7 @@ services:
       #   +server.identity "rust-server"
       #   +server.saveinterval 600
     volumes:
-      - ./data:/opt/server
+      - /opt/gaming/rust:/opt/server
     ports:
       - "28015:28015/udp"
       - "28016:28016/tcp"
