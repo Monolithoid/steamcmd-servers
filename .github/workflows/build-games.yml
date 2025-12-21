@@ -15,6 +15,7 @@ jobs:
         game:
           - valheim
           - project-zomboid
+          - rust
 
     steps:
       - uses: actions/checkout@v4
