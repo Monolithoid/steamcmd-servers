@@ -13,3 +13,6 @@ docker run -d \
   -v $(pwd)/data:/opt/server \
   monolithoid/valheim-server:latest
 ```
+
+- Ensure the mounted folder on the Coolify host is owned by UID/GID `1000` (default `steam` user in the container), for example: `sudo chown -R 1000:1000 /path/to/your/data`.
+- Open and forward UDP ports `2456-2457` on your firewall/router (and in Coolify) so players can reach the server. Example on Debian/Ubuntu with UFW: `sudo ufw allow 2456:2457/udp`.
