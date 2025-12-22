@@ -36,6 +36,8 @@ docker run --rm \
 
 - Mount a volume at `/opt/server` to persist data.
 - Replace `SERVER_CMD` with the script provided by your game.
+- Ensure the mounted folder on the Coolify host is owned by UID/GID `1000` (default `steam` user in the container), for example: `sudo chown -R 1000:1000 /path/to/your/data`.
+- Open and forward the required UDP/TCP ports on your firewall/router (and in Coolify) so players can reach the server. Example on Debian/Ubuntu with UFW: `sudo ufw allow 2456:2458/udp` (adapt to your game).
 
 ## Customization
 
