@@ -13,7 +13,7 @@ ENV SERVER_CMD="\
   +rcon.password \"changeme\" \
   +server.level \"Procedural Map\" \
   +server.seed 12345 \
-  +server.worldsize 3500 \
+  +server.worldsize 1000 \
   +server.maxplayers 4 \
   +server.hostname \"Monolithoid Rust\" \
   +server.description \"Serveur Rust basé sur SteamCMD\" \
