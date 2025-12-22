@@ -38,4 +38,4 @@ fi
 
 echo "[steamcmd-linux-core] Starting server: ${SERVER_CMD}"
 cd "${SERVER_DIR}"
-exec ${SERVER_CMD}
+exec /bin/bash -lc "${SERVER_CMD}"
