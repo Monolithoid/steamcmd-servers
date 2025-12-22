@@ -4,6 +4,7 @@ set -euo pipefail
 : "${STEAMCMD_DIR:=/opt/steamcmd}"
 : "${SERVER_DIR:=/opt/server}"
 : "${WINEPREFIX:=/home/steam/.wine}"
+: "${ENABLE_TERMINAL:=1}"
 
 : "${STEAM_APP_ID:?STEAM_APP_ID must be set}"
 : "${STEAM_LOGIN:=anonymous}"
@@ -30,6 +31,12 @@ update_args+=" +quit"
 
 echo "[steamcmd-wine-core] Updating app ${STEAM_APP_ID}..."
 "${STEAMCMD_DIR}/steamcmd.sh" ${update_args}
+
+if [[ "${ENABLE_TERMINAL}" == "1" ]]; then
+  echo "[steamcmd-wine-core] Terminal mode enabled. Opening shell in ${SERVER_DIR}."
+  cd "${SERVER_DIR}"
+  exec /bin/bash
+fi
 
 echo "[steamcmd-wine-core] Starting Windows server via Wine: ${SERVER_EXE} ${SERVER_ARGS}"
 cd "${SERVER_DIR}"

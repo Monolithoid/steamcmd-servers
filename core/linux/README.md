@@ -11,6 +11,7 @@ This image provides a ready-to-use Linux base to deploy a dedicated server with 
 - `SERVER_CMD` (default `./server.sh`): command executed after install.
 - `SERVER_DIR` (default `/opt/server`): server installation path.
 - `STEAMCMD_DIR` (default `/opt/steamcmd`): SteamCMD location.
+- `ENABLE_TERMINAL` (default `1`): when `1`, run SteamCMD update then drop into a shell in `SERVER_DIR` instead of starting the server (useful for debugging via Coolify or Docker). Set to `0` to start the server normally after the update.
 
 ## How the image prepares the server
 
