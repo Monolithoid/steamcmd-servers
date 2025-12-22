@@ -5,7 +5,7 @@ ENV STEAM_APP_ID=258550
 
 # Commande par défaut (surchargable via SERVER_CMD)
 ENV SERVER_CMD="\
-./RustDedicated -batchmode \
+./RustDedicated -batchmode -nographics \
   +server.port 28015 \
   +server.queryport 28017 \
   +rcon.port 28016 \
