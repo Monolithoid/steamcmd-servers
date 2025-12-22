@@ -22,7 +22,7 @@ This image provides a ready-to-use Linux base to deploy a dedicated server with 
    - `+app_update <STEAM_APP_ID> [-beta <STEAM_BRANCH>] [validate]`
    - `+quit`
 3. `steamcmd.sh` runs this sequence, downloading or updating server files in `SERVER_DIR`.
-4. The server command (`SERVER_CMD`) then runs from `SERVER_DIR`.
+4. The server command (`SERVER_CMD`) then runs from `SERVER_DIR` via `bash -lc`, so you can safely include quoted arguments in a single string (e.g., names with spaces).
 
 ## Usage example
 
