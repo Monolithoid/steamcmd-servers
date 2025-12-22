@@ -13,11 +13,11 @@ set -euo pipefail
 
 : "${SERVER_CMD:=./server.sh}"
 
-update_args="+login ${STEAM_LOGIN}"
+update_args=" +force_install_dir ${SERVER_DIR}"
+update_args+="+login ${STEAM_LOGIN}"
 if [[ -n "${STEAM_PASSWORD}" && "${STEAM_LOGIN}" != "anonymous" ]]; then
   update_args+=" ${STEAM_PASSWORD}"
 fi
-update_args+=" +force_install_dir ${SERVER_DIR}"
 update_args+=" +app_update ${STEAM_APP_ID}"
 if [[ -n "${STEAM_BRANCH}" && "${STEAM_BRANCH}" != "public" ]]; then
   update_args+=" -beta ${STEAM_BRANCH}"
