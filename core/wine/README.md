@@ -13,6 +13,7 @@ This image provides a base to run Windows dedicated servers on Linux via Wine. I
 - `SERVER_DIR` (default `/opt/server`): server installation path.
 - `STEAMCMD_DIR` (default `/opt/steamcmd`): SteamCMD location.
 - `WINEPREFIX` (default `/home/steam/.wine`): Wine prefix for the Windows environment.
+- `ENABLE_TERMINAL` (default `1`): when `1`, runs the SteamCMD update then opens a shell in `SERVER_DIR` instead of launching the server (handy for Coolify/Docker debugging). Set to `0` to launch the server after the update.
 
 ## How the image prepares the server
 
