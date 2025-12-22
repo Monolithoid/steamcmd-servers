@@ -13,6 +13,8 @@ This image provides a ready-to-use Linux base to deploy a dedicated server with 
 - `STEAMCMD_DIR` (default `/opt/steamcmd`): SteamCMD location.
 - `ENABLE_TERMINAL` (default `1`): when `1`, run SteamCMD update then drop into a shell in `SERVER_DIR` instead of starting the server (useful for debugging via Coolify or Docker). Set to `0` to start the server normally after the update.
 
+The entrypoint also creates `/home/steam/.steam/sdk64/steamclient.so` as a symlink to the SteamCMD `steamclient.so`, so games expecting that path can load the library without additional setup.
+
 ## How the image prepares the server
 
 1. SteamCMD is downloaded and extracted into `STEAMCMD_DIR` (see `Dockerfile`).

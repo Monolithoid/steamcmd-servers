@@ -13,6 +13,30 @@ set -euo pipefail
 
 : "${SERVER_CMD:=./server.sh}"
 
+ensure_steamclient_symlink() {
+  local steam_home="/home/steam/.steam"
+  local steam_sdk_dir="${steam_home}/sdk64"
+  local steam_client_source="${STEAMCMD_DIR}/linux64/steamclient.so"
+  local steam_client_target="${steam_sdk_dir}/steamclient.so"
+
+  mkdir -p "${steam_sdk_dir}"
+
+  if [[ -L "${steam_client_target}" ]]; then
+    local current_target
+    current_target="$(readlink "${steam_client_target}")"
+    if [[ "${current_target}" == "${steam_client_source}" ]]; then
+      return 0
+    fi
+    rm -f "${steam_client_target}"
+  elif [[ -f "${steam_client_target}" ]]; then
+    rm -f "${steam_client_target}"
+  fi
+
+  ln -s "${steam_client_source}" "${steam_client_target}"
+}
+
+ensure_steamclient_symlink
+
 update_args="+force_install_dir ${SERVER_DIR}"
 update_args+=" +login ${STEAM_LOGIN}"
 if [[ -n "${STEAM_PASSWORD}" && "${STEAM_LOGIN}" != "anonymous" ]]; then
