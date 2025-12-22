@@ -13,23 +13,29 @@ set -euo pipefail
 
 : "${SERVER_CMD:=./server.sh}"
 
-ensure_library_path() {
-  local steam_lib_dir="${STEAMCMD_DIR}/linux64"
-  local current_path="${LD_LIBRARY_PATH:-}"
-  local updated_path="${steam_lib_dir}"
+ensure_steamclient_symlink() {
+  local steam_home="/home/steam/.steam"
+  local steam_sdk_dir="${steam_home}/sdk64"
+  local steam_client_source="${STEAMCMD_DIR}/linux64/steamclient.so"
+  local steam_client_target="${steam_sdk_dir}/steamclient.so"
 
-  if [[ -n "${current_path}" ]]; then
-    if [[ ":${current_path}:" != *":${steam_lib_dir}:"* ]]; then
-      updated_path+=":${current_path}"
-    else
-      updated_path="${current_path}"
+  mkdir -p "${steam_sdk_dir}"
+
+  if [[ -L "${steam_client_target}" ]]; then
+    local current_target
+    current_target="$(readlink "${steam_client_target}")"
+    if [[ "${current_target}" == "${steam_client_source}" ]]; then
+      return 0
     fi
+    rm -f "${steam_client_target}"
+  elif [[ -f "${steam_client_target}" ]]; then
+    rm -f "${steam_client_target}"
   fi
 
-  export LD_LIBRARY_PATH="${updated_path}"
+  ln -s "${steam_client_source}" "${steam_client_target}"
 }
 
-ensure_library_path
+ensure_steamclient_symlink
 
 update_args="+force_install_dir ${SERVER_DIR}"
 update_args+=" +login ${STEAM_LOGIN}"
