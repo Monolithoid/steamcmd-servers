@@ -13,6 +13,24 @@ set -euo pipefail
 
 : "${SERVER_CMD:=./server.sh}"
 
+ensure_library_path() {
+  local steam_lib_dir="${STEAMCMD_DIR}/linux64"
+  local current_path="${LD_LIBRARY_PATH:-}"
+  local updated_path="${steam_lib_dir}"
+
+  if [[ -n "${current_path}" ]]; then
+    if [[ ":${current_path}:" != *":${steam_lib_dir}:"* ]]; then
+      updated_path+=":${current_path}"
+    else
+      updated_path="${current_path}"
+    fi
+  fi
+
+  export LD_LIBRARY_PATH="${updated_path}"
+}
+
+ensure_library_path
+
 update_args="+force_install_dir ${SERVER_DIR}"
 update_args+=" +login ${STEAM_LOGIN}"
 if [[ -n "${STEAM_PASSWORD}" && "${STEAM_LOGIN}" != "anonymous" ]]; then
