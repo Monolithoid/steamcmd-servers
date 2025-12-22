@@ -14,7 +14,7 @@ ENV SERVER_CMD="\
   +server.level \"Procedural Map\" \
   +server.seed 12345 \
   +server.worldsize 3500 \
-  +server.maxplayers 50 \
+  +server.maxplayers 4 \
   +server.hostname \"Monolithoid Rust\" \
   +server.description \"Serveur Rust basé sur SteamCMD\" \
   +server.identity \"rust-server\" \
