@@ -15,8 +15,8 @@ set -euo pipefail
 : "${SERVER_EXE:=Server.exe}"
 : "${SERVER_ARGS:=}"
 
-update_args=" +force_install_dir ${SERVER_DIR}"
-update_args+="+login ${STEAM_LOGIN}"
+update_args="+force_install_dir ${SERVER_DIR}"
+update_args+=" +login ${STEAM_LOGIN}"
 if [[ -n "${STEAM_PASSWORD}" && "${STEAM_LOGIN}" != "anonymous" ]]; then
   update_args+=" ${STEAM_PASSWORD}"
 fi
