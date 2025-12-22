@@ -4,7 +4,8 @@ ENV STEAMCMD_DIR=/opt/steamcmd \
     SERVER_DIR=/opt/server \
     STEAM_LOGIN=anonymous \
     STEAM_BRANCH=public \
-    STEAM_VALIDATE=0
+    STEAM_VALIDATE=0 \
+    LD_LIBRARY_PATH=/opt/steamcmd/linux64
 
 RUN dpkg --add-architecture i386 && \
     apt-get update && \
