@@ -53,7 +53,7 @@ fi
 update_args+=" +quit"
 
 if [[ "${STEAMCMD}" == "1" ]]; then
-  echo "[steamcmd-linux-core] Updating app ${STEAM_APP_ID}... test"
+  echo "[steamcmd-linux-core] Updating app ${STEAM_APP_ID}... test2"
   "${STEAMCMD_DIR}/steamcmd.sh" ${update_args}
 fi
 
