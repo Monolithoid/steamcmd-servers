@@ -4,6 +4,7 @@ set -euo pipefail
 : "${STEAMCMD_DIR:=/opt/steamcmd}"
 : "${SERVER_DIR:=/opt/server}"
 : "${ENABLE_TERMINAL:=1}"
+: "${START_SERVER:=1}"
 
 : "${STEAM_APP_ID:?STEAM_APP_ID must be set}"
 : "${STEAM_LOGIN:=anonymous}"
@@ -58,6 +59,11 @@ if [[ "${ENABLE_TERMINAL}" == "1" ]]; then
   echo "[steamcmd-linux-core] Terminal mode enabled. Opening shell in ${SERVER_DIR}."
   cd "${SERVER_DIR}"
   exec /bin/bash
+fi
+
+if [[ "${START_SERVER}" != "1" ]]; then
+  echo "[steamcmd-linux-core] Server autostart disabled (START_SERVER=${START_SERVER}). Exiting after update."
+  exit 0
 fi
 
 echo "[steamcmd-linux-core] Starting server: ${SERVER_CMD}"
