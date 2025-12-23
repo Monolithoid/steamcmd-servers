@@ -6,6 +6,11 @@ on:
     paths:
       - "games/**"
       - ".github/workflows/build-games.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "games/**"
+      - ".github/workflows/build-games.yml"
 
 jobs:
   build-games:

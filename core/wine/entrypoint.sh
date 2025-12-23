@@ -30,7 +30,7 @@ if [[ "${STEAM_VALIDATE}" == "1" ]]; then
 fi
 update_args+=" +quit"
 
-echo "[steamcmd-wine-core] Updating app ${STEAM_APP_ID}..."
+echo "[steamcmd-wine-core] Updating app ${STEAM_APP_ID}... test"
 "${STEAMCMD_DIR}/steamcmd.sh" ${update_args}
 
 if [[ "${ENABLE_TERMINAL}" == "1" ]]; then

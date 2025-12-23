@@ -3,8 +3,9 @@ set -euo pipefail
 
 : "${STEAMCMD_DIR:=/opt/steamcmd}"
 : "${SERVER_DIR:=/opt/server}"
-: "${ENABLE_TERMINAL:=1}"
-
+: "${STEAMCMD:=1}"
+: "${ENABLE_TERMINAL:=0}"
+: "${START_SERVER:=1}"
 : "${STEAM_APP_ID:?STEAM_APP_ID must be set}"
 : "${STEAM_LOGIN:=anonymous}"
 : "${STEAM_PASSWORD:=}"
@@ -43,8 +44,10 @@ if [[ "${STEAM_VALIDATE}" == "1" ]]; then
 fi
 update_args+=" +quit"
 
-echo "[steamcmd-linux-core] Updating app ${STEAM_APP_ID}..."
-"${STEAMCMD_DIR}/steamcmd.sh" ${update_args}
+if [[ "${STEAMCMD}" == "1" ]]; then
+  echo "[steamcmd-linux-core] Updating app ${STEAM_APP_ID}... test2"
+  "${STEAMCMD_DIR}/steamcmd.sh" ${update_args}
+fi
 
 ensure_steamclient_symlink
 
@@ -54,6 +57,8 @@ if [[ "${ENABLE_TERMINAL}" == "1" ]]; then
   exec /bin/bash
 fi
 
-echo "[steamcmd-linux-core] Starting server: ${SERVER_CMD}"
-cd "${SERVER_DIR}"
-exec /bin/bash -lc "${SERVER_CMD}"
+if [[ "${START_SERVER}" == "1" ]]; then
+  echo "[steamcmd-linux-core] Starting server: ${SERVER_CMD}"
+  cd "${SERVER_DIR}"
+  exec /bin/bash -lc "${SERVER_CMD}"
+fi
