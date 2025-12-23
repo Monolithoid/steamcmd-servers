@@ -22,21 +22,13 @@ ensure_steamclient_symlink() {
 
   mkdir -p "${steam_sdk_dir}"
 
-  if [[ -L "${steam_client_target}" ]]; then
-    local current_target
-    current_target="$(readlink "${steam_client_target}")"
-    if [[ "${current_target}" == "${steam_client_source}" ]]; then
-      return 0
-    fi
-    rm -f "${steam_client_target}"
-  elif [[ -f "${steam_client_target}" ]]; then
-    rm -f "${steam_client_target}"
+  if [[ ! -f "${steam_client_source}" ]]; then
+    echo "[steamcmd-linux-core] Warning: steamclient.so not found at ${steam_client_source}. It will be linked after SteamCMD installs files."
+    return 1
   fi
 
-  ln -s "${steam_client_source}" "${steam_client_target}"
+  ln -sf "${steam_client_source}" "${steam_client_target}"
 }
-
-ensure_steamclient_symlink
 
 update_args="+force_install_dir ${SERVER_DIR}"
 update_args+=" +login ${STEAM_LOGIN}"
@@ -56,6 +48,8 @@ if [[ "${STEAMCMD}" == "1" ]]; then
   echo "[steamcmd-linux-core] Updating app ${STEAM_APP_ID}... test2"
   "${STEAMCMD_DIR}/steamcmd.sh" ${update_args}
 fi
+
+ensure_steamclient_symlink
 
 if [[ "${ENABLE_TERMINAL}" == "1" ]]; then
   echo "[steamcmd-linux-core] Terminal mode enabled. Opening shell in ${SERVER_DIR}."

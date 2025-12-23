@@ -18,6 +18,8 @@ This image provides a ready-to-use Linux base to deploy a dedicated server with 
 
 The entrypoint also creates `/home/steam/.steam/sdk64/steamclient.so` as a symlink to the SteamCMD `steamclient.so`, so games expecting that path can load the library without additional setup.
 
+After SteamCMD finishes, the entrypoint creates `/home/steam/.steam/sdk64/steamclient.so` as a symlink to the SteamCMD `steamclient.so` (if present), so games expecting that path can load the library without additional setup.
+
 ## How the image prepares the server
 
 1. SteamCMD is downloaded and extracted into `STEAMCMD_DIR` (see `Dockerfile`).
