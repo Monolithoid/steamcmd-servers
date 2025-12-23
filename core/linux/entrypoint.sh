@@ -4,7 +4,7 @@ set -euo pipefail
 : "${STEAMCMD_DIR:=/opt/steamcmd}"
 : "${SERVER_DIR:=/opt/server}"
 : "${STEAMCMD:=1}"
-: "${ENABLE_TERMINAL:=1}"
+: "${ENABLE_TERMINAL:=0}"
 : "${START_SERVER:=1}"
 : "${STEAM_APP_ID:?STEAM_APP_ID must be set}"
 : "${STEAM_LOGIN:=anonymous}"
