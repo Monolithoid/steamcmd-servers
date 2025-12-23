@@ -6,6 +6,11 @@ on:
     paths:
       - "core/**"
       - ".github/workflows/build-core.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "core/**"
+      - ".github/workflows/build-core.yml"
 
 jobs:
   build-core:
