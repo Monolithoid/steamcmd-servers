@@ -45,20 +45,23 @@ fi
 update_args+=" +quit"
 
 if [[ "${STEAMCMD}" == "1" ]]; then
-  echo "[steamcmd-linux-core] Updating app ${STEAM_APP_ID}... test2"
+  echo "[steamcmd-linux-core] Updating app ${STEAM_APP_ID}..."
   "${STEAMCMD_DIR}/steamcmd.sh" ${update_args}
+  echo "[steamcmd-linux-core] ... End of updating app ${STEAM_APP_ID}"
 fi
 
 ensure_steamclient_symlink
 
 if [[ "${ENABLE_TERMINAL}" == "1" ]]; then
-  echo "[steamcmd-linux-core] Terminal mode enabled. Opening shell in ${SERVER_DIR}."
+  echo "[steamcmd-linux-core] Terminal mode enabled. Opening shell in ${SERVER_DIR} ..."
   cd "${SERVER_DIR}"
   exec /bin/bash
+  echo "[steamcmd-linux-core] ... End of opening shell in ${SERVER_DIR}"
 fi
 
 if [[ "${START_SERVER}" == "1" ]]; then
-  echo "[steamcmd-linux-core] Starting server: ${SERVER_CMD}"
+  echo "[steamcmd-linux-core] Starting server: ${SERVER_CMD} ..."
   cd "${SERVER_DIR}"
   exec /bin/bash -lc "${SERVER_CMD}"
+  echo "[steamcmd-linux-core] ... End of starting server: ${SERVER_CMD}"
 fi
