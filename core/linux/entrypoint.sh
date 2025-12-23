@@ -24,7 +24,7 @@ ensure_steamclient_symlink() {
 
   if [[ ! -f "${steam_client_source}" ]]; then
     echo "[steamcmd-linux-core] Warning: steamclient.so not found at ${steam_client_source}. It will be linked after SteamCMD installs files."
-    return 1
+    return 0
   fi
 
   ln -sf "${steam_client_source}" "${steam_client_target}"
@@ -55,8 +55,12 @@ ensure_steamclient_symlink
 if [[ "${ENABLE_TERMINAL}" == "1" ]]; then
   echo "[steamcmd-linux-core] Terminal mode enabled. Opening shell in ${SERVER_DIR} ..."
   cd "${SERVER_DIR}"
-  exec /bin/bash
-  echo "[steamcmd-linux-core] ... End of opening shell in ${SERVER_DIR}"
+  if [[ -t 0 || -t 1 ]]; then
+    exec /bin/bash -l
+  fi
+
+  echo "[steamcmd-linux-core] No TTY detected. Keeping the container alive so you can attach a shell (e.g., docker exec -it <container> bash)."
+  exec tail -f /dev/null
 fi
 
 if [[ "${START_SERVER}" == "1" ]]; then

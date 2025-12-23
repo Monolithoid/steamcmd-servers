@@ -12,7 +12,7 @@ This image provides a ready-to-use Linux base to deploy a dedicated server with 
 - `SERVER_DIR` (default `/opt/server`): server installation path.
 - `STEAMCMD_DIR` (default `/opt/steamcmd`): SteamCMD location.
 - `LD_LIBRARY_PATH` (default `/opt/steamcmd/linux64`): includes the Steam client libraries so games can load `steamclient.so` without extra links.
-- `ENABLE_TERMINAL` (default `1`): when `1`, run SteamCMD update then drop into a shell in `SERVER_DIR` instead of starting the server (useful for debugging via Coolify or Docker). Set to `0` to start the server normally after the update.
+- `ENABLE_TERMINAL` (default `0`): when `1`, run SteamCMD update then drop into a shell in `SERVER_DIR` instead of starting the server (useful for debugging via Coolify or Docker). If no TTY is available, the container stays alive so you can attach later (for example with `docker exec -it`). Set to `0` to start the server normally after the update.
 - `START_SERVER` (default `1`): when `0`, run the SteamCMD update steps then exit without launching the server (useful for update-only runs).
 - `STEAMCMD` (default `1`): when `0`, exit without SteamCMD update (useful for update-only runs).
 
