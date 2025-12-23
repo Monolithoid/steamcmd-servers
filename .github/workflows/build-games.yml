@@ -5,12 +5,16 @@ on:
     branches: ["main"]
     paths:
       - "games/**"
+      - "core/**"
       - ".github/workflows/build-games.yml"
+      - ".github/workflows/build-core.yml"
   pull_request:
     branches: ["main"]
     paths:
       - "games/**"
+      - "core/**"
       - ".github/workflows/build-games.yml"
+      - ".github/workflows/build-core.yml"
 
 jobs:
   build-games:
