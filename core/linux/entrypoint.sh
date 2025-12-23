@@ -13,6 +13,22 @@ set -euo pipefail
 
 : "${SERVER_CMD:=./server.sh}"
 
+ensure_steamclient_symlink() {
+  local steam_home="/home/steam/.steam"
+  local steam_sdk_dir="${steam_home}/sdk64"
+  local steam_client_source="${STEAMCMD_DIR}/linux64/steamclient.so"
+  local steam_client_target="${steam_sdk_dir}/steamclient.so"
+
+  mkdir -p "${steam_sdk_dir}"
+
+  if [[ ! -f "${steam_client_source}" ]]; then
+    echo "[steamcmd-linux-core] Warning: steamclient.so not found at ${steam_client_source}. It will be linked after SteamCMD installs files."
+    return 1
+  fi
+
+  ln -sf "${steam_client_source}" "${steam_client_target}"
+}
+
 update_args="+force_install_dir ${SERVER_DIR}"
 update_args+=" +login ${STEAM_LOGIN}"
 if [[ -n "${STEAM_PASSWORD}" && "${STEAM_LOGIN}" != "anonymous" ]]; then
@@ -29,6 +45,8 @@ update_args+=" +quit"
 
 echo "[steamcmd-linux-core] Updating app ${STEAM_APP_ID}..."
 "${STEAMCMD_DIR}/steamcmd.sh" ${update_args}
+
+ensure_steamclient_symlink
 
 if [[ "${ENABLE_TERMINAL}" == "1" ]]; then
   echo "[steamcmd-linux-core] Terminal mode enabled. Opening shell in ${SERVER_DIR}."
