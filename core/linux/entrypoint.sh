@@ -6,6 +6,7 @@ set -euo pipefail
 : "${ENABLE_TERMINAL:=1}"
 : "${START_SERVER:=1}"
 
+: "${STEAMCMD:=1}"
 : "${STEAM_APP_ID:?STEAM_APP_ID must be set}"
 : "${STEAM_LOGIN:=anonymous}"
 : "${STEAM_PASSWORD:=}"
@@ -52,8 +53,10 @@ if [[ "${STEAM_VALIDATE}" == "1" ]]; then
 fi
 update_args+=" +quit"
 
-echo "[steamcmd-linux-core] Updating app ${STEAM_APP_ID}..."
-"${STEAMCMD_DIR}/steamcmd.sh" ${update_args}
+if [[ "${STEAMCMD}" == "1" ]]; then
+  echo "[steamcmd-linux-core] Updating app ${STEAM_APP_ID}..."
+  "${STEAMCMD_DIR}/steamcmd.sh" ${update_args}
+fi
 
 if [[ "${ENABLE_TERMINAL}" == "1" ]]; then
   echo "[steamcmd-linux-core] Terminal mode enabled. Opening shell in ${SERVER_DIR}."
