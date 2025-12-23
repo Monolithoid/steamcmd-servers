@@ -13,7 +13,14 @@ This image provides a base to run Windows dedicated servers on Linux via Wine. I
 - `SERVER_DIR` (default `/opt/server`): server installation path.
 - `STEAMCMD_DIR` (default `/opt/steamcmd`): SteamCMD location.
 - `WINEPREFIX` (default `/home/steam/.wine`): Wine prefix for the Windows environment.
-- `ENABLE_TERMINAL` (default `1`): when `1`, runs the SteamCMD update then opens a shell in `SERVER_DIR` instead of launching the server (handy for Coolify/Docker debugging). Set to `0` to launch the server after the update.
+- `LD_LIBRARY_PATH` (default `/opt/steamcmd/linux64`): includes the Steam client libraries so games can load `steamclient.so` without extra links.
+- `ENABLE_TERMINAL` (default `0`): when `1`, run SteamCMD update then drop into a shell in `SERVER_DIR` instead of starting the server (useful for debugging via Coolify or Docker). If no TTY is available, the container stays alive so you can attach later (for example with `docker exec -it`). Set to `0` to start the server normally after the update.
+- `START_SERVER` (default `1`): when `0`, run the SteamCMD update steps then exit without launching the server (useful for update-only runs).
+- `STEAMCMD` (default `1`): when `0`, exit without SteamCMD update (useful for update-only runs).
+
+The entrypoint also creates `/home/steam/.steam/sdk64/steamclient.so` as a symlink to the SteamCMD `steamclient.so`, so games expecting that path can load the library without additional setup.
+
+After SteamCMD finishes, the entrypoint creates `/home/steam/.steam/sdk64/steamclient.so` as a symlink to the SteamCMD `steamclient.so` (if present), so games expecting that path can load the library without additional setup.
 
 ## How the image prepares the server
 

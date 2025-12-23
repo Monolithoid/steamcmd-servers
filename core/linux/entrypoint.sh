@@ -66,6 +66,7 @@ fi
 if [[ "${START_SERVER}" == "1" ]]; then
   echo "[steamcmd-linux-core] Starting server: ${SERVER_CMD} ..."
   cd "${SERVER_DIR}"
+  
   exec /bin/bash -lc "${SERVER_CMD}"
   echo "[steamcmd-linux-core] ... End of starting server: ${SERVER_CMD}"
 fi
