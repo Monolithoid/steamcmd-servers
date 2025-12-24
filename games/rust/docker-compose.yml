@@ -3,8 +3,15 @@ version: "3.8"
 services:
   rust:
     image: monolithoid/rust-server:latest
+    deploy:
+      resources:
+        limits:
+          memory: 12G
     container_name: rust
-    restart: unless-stopped
+    environment:
+      ENABLE_TERMINAL: 0
+      START_SERVER: 1
+      STEAMCMD: 1
     environment:
       # Exemple de surcharge :
       # SERVER_CMD: >
@@ -17,8 +24,8 @@ services:
       #   +server.level "Procedural Map"
       #   +server.seed 12345
       #   +server.worldsize 3500
-      #   +server.maxplayers 50
-      #   +server.hostname "Mon serveur Rust"
+      #   +server.maxplayers 4
+      #   +server.hostname "Monolithoid Rust"
       #   +server.description "Serveur Rust basé sur SteamCMD"
       #   +server.identity "rust-server"
       #   +server.saveinterval 600
