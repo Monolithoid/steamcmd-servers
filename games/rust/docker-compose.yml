@@ -18,9 +18,9 @@ services:
       #   ./RustDedicated -batchmode -nographics
       #   +server.port 28015
       #   +server.queryport 28017
+      #   +rcon.password "supersecret"
       #   +rcon.port 28016
       #   +rcon.web 1
-      #   +rcon.password "supersecret"
       #   +server.level "Procedural Map"
       #   +server.seed 12345
       #   +server.worldsize 3500
