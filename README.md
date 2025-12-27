@@ -8,8 +8,6 @@ This repo contains:
   - `monolithoid/steamcmd-linux-core`
   - `monolithoid/steamcmd-wine-core`
 - **Per-game** Docker images, ready to use:
-  - `monolithoid/valheim-server`
-  - `monolithoid/project-zomboid-server`
   - `monolithoid/rust-server`
   - `monolithoid/assetto-corsa-server`
   - (and more to come)
@@ -30,14 +28,12 @@ flowchart LR
     end
 
     subgraph Game servers
-        valheim[valheim-server]
-        pz[project-zomboid-server]
         rust[rust-server]
+        assetto[assetto-corsa-server]
     end
 
-    linux_core --> valheim
     linux_core --> rust
-    wine_core --> pz
+    linux_core --> assetto
 
     linux_core .-> future_linux[future linux games]
     wine_core .-> future_wine[future wine games]
