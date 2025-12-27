@@ -22,6 +22,7 @@ jobs:
     strategy:
       matrix:
         game:
+          - assetto-corsa
           - valheim
           - project-zomboid
           - rust
