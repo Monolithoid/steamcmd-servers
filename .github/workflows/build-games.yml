@@ -23,8 +23,6 @@ jobs:
       matrix:
         game:
           - assetto-corsa
-          - valheim
-          - project-zomboid
           - rust
 
     steps:
