@@ -11,6 +11,7 @@ This repo contains:
   - `monolithoid/valheim-server`
   - `monolithoid/project-zomboid-server`
   - `monolithoid/rust-server`
+  - `monolithoid/assetto-corsa-server`
   - (and more to come)
 
 Each game in `games/<name>` provides:

@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  assetto-corsa:
+    image: monolithoid/assetto-corsa-server:latest
+    container_name: assetto-corsa
+    restart: unless-stopped
+    environment:
+      # Tu peux override si besoin
+      # SERVER_CMD: >
+      #   ./acServer --config ./cfg/server_cfg.ini --entry_list ./cfg/entry_list.ini
+    volumes:
+      - /opt/gaming/assetto-corsa:/opt/server
+    ports:
+      - "9600:9600/tcp"
+      - "9600:9600/udp"
+      - "8081:8081/tcp"
