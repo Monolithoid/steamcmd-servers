@@ -7,6 +7,7 @@ set -euo pipefail
 : "${STEAMCMD:=1}"
 : "${ENABLE_TERMINAL:=0}"
 : "${START_SERVER:=1}"
+: "${STEAMCMD_PLATFORM:=}"
 : "${STEAM_APP_ID:?STEAM_APP_ID must be set}"
 : "${STEAM_LOGIN:=anonymous}"
 : "${STEAM_PASSWORD:=}"
@@ -35,6 +36,9 @@ update_args="+force_install_dir ${SERVER_DIR}"
 update_args+=" +login ${STEAM_LOGIN}"
 if [[ -n "${STEAM_PASSWORD}" && "${STEAM_LOGIN}" != "anonymous" ]]; then
   update_args+=" ${STEAM_PASSWORD}"
+fi
+if [[ -n "${STEAMCMD_PLATFORM}" ]]; then
+  update_args+=" +@sSteamCmdForcePlatformType ${STEAMCMD_PLATFORM}"
 fi
 update_args+=" +app_update ${STEAM_APP_ID}"
 if [[ -n "${STEAM_BRANCH}" && "${STEAM_BRANCH}" != "public" ]]; then
