@@ -19,6 +19,29 @@ Each game in `games/<name>` provides:
 - a ready-to-copy/paste `docker-compose.yml` (Coolify, Portainer, etc.)
 - a game-specific `README.md`
 
+## Repository dependencies (Mermaid)
+
+```mermaid
+flowchart LR
+    subgraph Core images
+        linux_core[steamcmd-linux-core]
+        wine_core[steamcmd-wine-core]
+    end
+
+    subgraph Game servers
+        valheim[valheim-server]
+        pz[project-zomboid-server]
+        rust[rust-server]
+    end
+
+    linux_core --> valheim
+    linux_core --> rust
+    wine_core --> pz
+
+    linux_core -. reused for other linux-based games .-> future_linux[future linux games]
+    wine_core -. reused for other wine-based games .-> future_wine[future wine games]
+```
+
 ## Volumes and network access
 
 - Persistent volumes mounted from Coolify (or plain Docker) must be writable by the in-container `steam` user (UID/GID 1000 by default). On the host that runs Coolify, adjust ownership on the target folder before deploying, for example: `sudo chown -R 1000:1000 /path/to/your/data`.
