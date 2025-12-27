@@ -38,8 +38,8 @@ flowchart LR
     linux_core --> rust
     wine_core --> pz
 
-    linux_core -. reused for other linux-based games .-> future_linux[future linux games]
-    wine_core -. reused for other wine-based games .-> future_wine[future wine games]
+    linux_core .-> future_linux[future linux games]
+    wine_core .-> future_wine[future wine games]
 ```
 
 ## Volumes and network access
