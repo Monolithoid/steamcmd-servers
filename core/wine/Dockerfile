@@ -3,6 +3,9 @@ FROM debian:12-slim
 ENV DEBIAN_FRONTEND=noninteractive
 ENV STEAMCMD_DIR=/opt/steamcmd \
     SERVER_DIR=/opt/server \
+    STEAM_HOME=/home/steam \
+    PERSIST_STEAM_HOME=0 \
+    PERSIST_STEAM_HOME_DIR=/opt/steam-home \
     WINEPREFIX=/home/steam/.wine \
     STEAM_LOGIN=anonymous \
     STEAM_BRANCH=public \
@@ -28,8 +31,9 @@ RUN mkdir -p "${STEAMCMD_DIR}" "${SERVER_DIR}" && \
     curl -sSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz \
       | tar -xz
 
-RUN useradd -m -d /home/steam -s /bin/bash steam && \
-    chown -R steam:steam "${STEAMCMD_DIR}" "${SERVER_DIR}"
+RUN mkdir -p "${PERSIST_STEAM_HOME_DIR}" && \
+    useradd -m -d "${STEAM_HOME}" -s /bin/bash steam && \
+    chown -R steam:steam "${STEAMCMD_DIR}" "${SERVER_DIR}" "${PERSIST_STEAM_HOME_DIR}"
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

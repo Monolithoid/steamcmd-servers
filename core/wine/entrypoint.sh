@@ -3,7 +3,10 @@ set -euo pipefail
 
 : "${STEAMCMD_DIR:=/opt/steamcmd}"
 : "${SERVER_DIR:=/opt/server}"
-: "${WINEPREFIX:=/home/steam/.wine}"
+: "${STEAM_HOME:=/home/steam}"
+: "${WINEPREFIX:=${STEAM_HOME}/.wine}"
+: "${PERSIST_STEAM_HOME:=0}"
+: "${PERSIST_STEAM_HOME_DIR:=/opt/steam-home}"
 : "${STEAMCMD:=1}"
 : "${ENABLE_TERMINAL:=0}"
 : "${START_SERVER:=1}"
@@ -16,8 +19,28 @@ set -euo pipefail
 
 : "${SERVER_EXE:=Server.exe}"
 : "${SERVER_ARGS:=}"
+setup_steam_home() {
+  if [[ "${PERSIST_STEAM_HOME}" != "1" ]]; then
+    mkdir -p "${STEAM_HOME}"
+    return
+  fi
+
+  mkdir -p "${PERSIST_STEAM_HOME_DIR}"
+
+  if [[ ! -L "${STEAM_HOME}" && -d "${STEAM_HOME}" ]]; then
+    shopt -s dotglob nullglob
+    for item in "${STEAM_HOME}"/*; do
+      cp -a "${item}" "${PERSIST_STEAM_HOME_DIR}/"
+    done
+    shopt -u dotglob nullglob
+    rm -rf "${STEAM_HOME}"
+  fi
+
+  ln -snf "${PERSIST_STEAM_HOME_DIR}" "${STEAM_HOME}"
+}
+
 ensure_steamclient_symlink() {
-  local steam_home="/home/steam/.steam"
+  local steam_home="${STEAM_HOME}/.steam"
   local steam_sdk_dir="${steam_home}/sdk64"
   local steam_client_source="${STEAMCMD_DIR}/linux64/steamclient.so"
   local steam_client_target="${steam_sdk_dir}/steamclient.so"
@@ -31,6 +54,8 @@ ensure_steamclient_symlink() {
 
   ln -sf "${steam_client_source}" "${steam_client_target}"
 }
+
+setup_steam_home
 
 update_args="+force_install_dir ${SERVER_DIR}"
 update_args+=" +login ${STEAM_LOGIN}"

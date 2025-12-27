@@ -8,6 +8,8 @@ This image provides a base to run Windows dedicated servers on Linux via Wine. I
 - `STEAM_LOGIN` (default `anonymous`) and `STEAM_PASSWORD`: Steam account used to fetch the app (needed if anonymous access is not allowed).
 - `STEAM_BRANCH` (default `public`): branch/beta to install (`-beta` in SteamCMD).
 - `STEAM_VALIDATE` (default `0`): set to `1` to force file validation.
+- `PERSIST_STEAM_HOME` (default `0`): set to `1` to symlink `/home/steam` to `PERSIST_STEAM_HOME_DIR`, allowing you to mount a dedicated volume for the Steam user home (Steam Guard tokens, Wine prefix data, workshop cache, etc.).
+- `PERSIST_STEAM_HOME_DIR` (default `/opt/steam-home`): target directory used when `PERSIST_STEAM_HOME=1`. Mount your volume here to persist the home folder.
 - `SERVER_EXE` (default `Server.exe`): Windows executable for the server.
 - `SERVER_ARGS` (default empty): arguments passed to the executable.
 - `SERVER_DIR` (default `/opt/server`): server installation path.
@@ -46,6 +48,7 @@ docker run --rm \
 ```
 
 - Mount a volume at `/opt/server` to persist data and configuration.
+- To persist the Steam user home (Steam Guard tokens, Wine prefixes, workshop cache), set `PERSIST_STEAM_HOME=1` and mount a volume at `/opt/steam-home` (or your `PERSIST_STEAM_HOME_DIR` value).
 - If the server needs a graphical environment, enable Xvfb and set `DISPLAY` (see comments in `entrypoint.sh`).
 - Ensure the mounted folder on the Coolify host is owned by UID/GID `1000` (default `steam` user in the container), for example: `sudo chown -R 1000:1000 /path/to/your/data`.
 - Open and forward the required UDP/TCP ports on your firewall/router (and in Coolify) so players can reach the server. Example on Debian/Ubuntu with UFW: `sudo ufw allow 7777/udp` (adjust to your game’s ports).

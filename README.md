@@ -42,4 +42,5 @@ flowchart LR
 ## Volumes and network access
 
 - Persistent volumes mounted from Coolify (or plain Docker) must be writable by the in-container `steam` user (UID/GID 1000 by default). On the host that runs Coolify, adjust ownership on the target folder before deploying, for example: `sudo chown -R 1000:1000 /path/to/your/data`.
+- To persist Steam user data (Steam Guard tokens, workshop cache, Wine prefixes), enable `PERSIST_STEAM_HOME=1` on the base images and mount a volume at `/opt/steam-home` (or your chosen `PERSIST_STEAM_HOME_DIR` value).
 - Expose and open the game ports on your firewall/router (and in Coolify if applicable) so players can reach the server. Example on a Debian/Ubuntu host using UFW: `sudo ufw allow 2456:2458/udp` (adjust ports/protocols per game).
