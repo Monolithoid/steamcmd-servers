@@ -1,7 +1,7 @@
 # monolithoid/rust-server
 
-Serveur Rust dédié basé sur SteamCMD, avec mise à jour automatique à chaque démarrage.
-Optimisé pour une utilisation simple via Docker ou Coolify.
+Dedicated Rust server built on SteamCMD, automatically updated at each start.
+Optimized for simple use via Docker or Coolify.
 
 ## Quick start
 
@@ -15,10 +15,8 @@ docker run -d \
   monolithoid/rust-server:latest
 ```
 
-## Variables utiles
+## Useful variables
 
-- `SERVER_CMD` : commande complète pour lancer le serveur Rust (ports, rcon, seed, etc.).
-- Assurez-vous que le dossier monté sur l'hôte Coolify est possédé par l'UID/GID `1000` (utilisateur `steam` dans le conteneur) par exemple avec `sudo chown -R 1000:1000 /chemin/vers/vos/données`.
-- Ouvrez et redirigez les ports UDP/TCP nécessaires (`28015`, `28016`, `28017` par défaut) sur votre pare-feu/routeur (et dans Coolify) pour que les joueurs puissent rejoindre le serveur. Exemple sous Debian/Ubuntu avec UFW : `sudo ufw allow 28015/udp` puis `sudo ufw allow 28016,28017/tcp`.
-
-test
+- `SERVER_CMD`: full command used to start the Rust server (ports, rcon, seed, etc.).
+- Make sure the folder mounted on the Coolify host is owned by UID/GID `1000` (the `steam` user in the container), for example with `sudo chown -R 1000:1000 /path/to/your/data`.
+- Open and forward the required UDP/TCP ports (`28015`, `28016`, `28017` by default) on your firewall/router (and in Coolify) so players can join the server. Example on Debian/Ubuntu with UFW: `sudo ufw allow 28015/udp` then `sudo ufw allow 28016,28017/tcp`.

@@ -1,7 +1,7 @@
 # monolithoid/assetto-corsa-server
 
-Serveur dédié Assetto Corsa basé sur SteamCMD, avec mise à jour automatique à chaque démarrage.
-Pensé pour une utilisation simple via Docker ou Coolify.
+Dedicated Assetto Corsa server built on SteamCMD, automatically updated at each start.
+Designed for simple use via Docker or Coolify.
 
 ## Quick start
 
@@ -15,5 +15,5 @@ docker run -d \
   monolithoid/assetto-corsa-server:latest
 ```
 
-- Assure-toi que le dossier monté côté Coolify soit possédé par l'UID/GID `1000` (utilisateur `steam` dans le conteneur), par exemple : `sudo chown -R 1000:1000 /path/to/your/data`.
-- Ouvre et redirige les ports `9600/tcp`, `9600/udp` et `8081/tcp` sur ton firewall/routeur (et dans Coolify) pour que les joueurs puissent rejoindre le serveur.
+- Make sure the folder mounted from Coolify is owned by UID/GID `1000` (the `steam` user in the container), for example: `sudo chown -R 1000:1000 /path/to/your/data`.
+- Open and forward ports `9600/tcp`, `9600/udp`, and `8081/tcp` on your firewall/router (and in Coolify) so that players can join the server.
