@@ -33,7 +33,7 @@ flowchart LR
     end
 
     linux_core --> rust
-    linux_core --> assetto
+    wine_core --> assetto
 
     linux_core .-> future_linux[future linux games]
     wine_core .-> future_wine[future wine games]
