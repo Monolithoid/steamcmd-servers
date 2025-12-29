@@ -33,5 +33,5 @@ services:
       - /opt/gaming/rust:/opt/server
     ports:
       - "28015:28015/udp"
-      - "28016:28016/tcp"
+      - "28016:28016/udp"
       - "28017:28017/tcp"
