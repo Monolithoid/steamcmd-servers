@@ -24,6 +24,7 @@ jobs:
         game:
           - assetto-corsa
           - rust
+          - starrupture
 
     steps:
       - uses: actions/checkout@v4
