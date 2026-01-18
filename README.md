@@ -10,6 +10,7 @@ This repo contains:
 - **Per-game** Docker images, ready to use:
   - `monolithoid/rust-server`
   - `monolithoid/assetto-corsa-server`
+  - `monolithoid/starrupture-server`
   - (and more to come)
 
 Each game in `games/<name>` provides:
@@ -30,10 +31,12 @@ flowchart LR
     subgraph Game servers
         rust[rust-server]
         assetto[assetto-corsa-server]
+        starrupture[starrupture-server]
     end
 
     linux_core --> rust
     wine_core --> assetto
+    wine_core --> starrupture
 
     linux_core .-> future_linux[future linux games]
     wine_core .-> future_wine[future wine games]

@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  starrupture:
+    image: monolithoid/starrupture-server:latest
+    container_name: starrupture
+    restart: unless-stopped
+    environment:
+      STEAM_APP_ID: "3809400"
+      SERVER_EXE: "<EXECUTABLE_SERVEUR_WINDOWS>"
+      SERVER_ARGS: "<ARGUMENTS_SERVEUR>"
+    volumes:
+      - ./data:/opt/server
+    ports:
+      # Ajoute ici les ports requis par StarRupture.
+      # - "27015:27015/udp"
+      # - "27016:27016/udp"
