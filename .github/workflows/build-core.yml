@@ -11,6 +11,12 @@ on:
     paths:
       - "core/**"
       - ".github/workflows/build-core.yml"
+  workflow_dispatch:
+    inputs:
+      rebuild_reason:
+        description: "Reason for manual rebuild"
+        required: false
+        default: "manual rebuild"
 
 jobs:
   build-core:
@@ -32,6 +38,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./core/${{ matrix.core }}
+          pull: true
+          no-cache: ${{ github.event_name == 'workflow_dispatch' }}
           push: true
           tags: |
             monolithoid/steamcmd-${{ matrix.core }}-core:latest

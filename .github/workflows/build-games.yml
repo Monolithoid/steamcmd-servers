@@ -15,6 +15,12 @@ on:
       - "core/**"
       - ".github/workflows/build-games.yml"
       - ".github/workflows/build-core.yml"
+  workflow_dispatch:
+    inputs:
+      rebuild_reason:
+        description: "Reason for manual rebuild"
+        required: false
+        default: "manual rebuild"
 
 jobs:
   build-games:
@@ -39,6 +45,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./games/${{ matrix.game }}
+          pull: true
+          no-cache: ${{ github.event_name == 'workflow_dispatch' }}
           push: true
           tags: |
             monolithoid/${{ matrix.game }}-server:latest
