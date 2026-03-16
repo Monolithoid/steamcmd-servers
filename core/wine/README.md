@@ -8,6 +8,8 @@ This image provides a base to run Windows dedicated servers on Linux via Wine. I
 - `STEAM_LOGIN` (default `anonymous`) and `STEAM_PASSWORD`: Steam account used to fetch the app (needed if anonymous access is not allowed).
 - `STEAM_BRANCH` (default `public`): branch/beta to install (`-beta` in SteamCMD).
 - `STEAM_VALIDATE` (default `0`): set to `1` to force file validation.
+- `STEAMCMD_MAX_RETRIES` (default `3`): maximum number of retry attempts when SteamCMD returns transient update errors (like `state is 0x6 after update job`).
+- `STEAMCMD_RETRY_DELAY` (default `10`): delay in seconds between retry attempts.
 - `SERVER_EXE` (default `Server.exe`): Windows executable for the server.
 - `SERVER_ARGS` (default empty): arguments passed to the executable.
 - `SERVER_DIR` (default `/opt/server`): server installation path.
