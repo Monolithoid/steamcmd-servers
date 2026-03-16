@@ -11,6 +11,8 @@ set -euo pipefail
 : "${STEAM_PASSWORD:=}"
 : "${STEAM_BRANCH:=public}"
 : "${STEAM_VALIDATE:=0}"
+: "${STEAMCMD_MAX_RETRIES:=3}"
+: "${STEAMCMD_RETRY_DELAY:=10}"
 
 : "${SERVER_CMD:=./server.sh}"
 
@@ -44,9 +46,44 @@ if [[ "${STEAM_VALIDATE}" == "1" ]]; then
 fi
 update_args+=" +quit"
 
+run_steamcmd_update() {
+  local attempt=1
+  local output_file=""
+
+  while [[ "${attempt}" -le "${STEAMCMD_MAX_RETRIES}" ]]; do
+    output_file="$(mktemp)"
+
+    echo "[steamcmd-linux-core] Updating app ${STEAM_APP_ID} (attempt ${attempt}/${STEAMCMD_MAX_RETRIES})..."
+
+    if "${STEAMCMD_DIR}/steamcmd.sh" ${update_args} 2>&1 | tee "${output_file}"; then
+      rm -f "${output_file}"
+      return 0
+    fi
+
+    if grep -Fq "state is 0x6 after update job" "${output_file}"; then
+      echo "[steamcmd-linux-core] SteamCMD returned state 0x6 for app ${STEAM_APP_ID}."
+      echo "[steamcmd-linux-core] This is often transient. Retrying after ${STEAMCMD_RETRY_DELAY}s..."
+    else
+      echo "[steamcmd-linux-core] SteamCMD update failed with a non-retryable error."
+      rm -f "${output_file}"
+      return 1
+    fi
+
+    rm -f "${output_file}"
+
+    if [[ "${attempt}" -lt "${STEAMCMD_MAX_RETRIES}" ]]; then
+      sleep "${STEAMCMD_RETRY_DELAY}"
+    fi
+
+    attempt=$((attempt + 1))
+  done
+
+  echo "[steamcmd-linux-core] SteamCMD update failed after ${STEAMCMD_MAX_RETRIES} attempts."
+  return 1
+}
+
 if [[ "${STEAMCMD}" == "1" ]]; then
-  echo "[steamcmd-linux-core] Updating app ${STEAM_APP_ID}..."
-  "${STEAMCMD_DIR}/steamcmd.sh" ${update_args}
+  run_steamcmd_update
   echo "[steamcmd-linux-core] ... End of updating app ${STEAM_APP_ID}"
 fi
 

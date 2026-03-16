@@ -13,6 +13,8 @@ set -euo pipefail
 : "${STEAM_PASSWORD:=}"
 : "${STEAM_BRANCH:=public}"
 : "${STEAM_VALIDATE:=0}"
+: "${STEAMCMD_MAX_RETRIES:=3}"
+: "${STEAMCMD_RETRY_DELAY:=10}"
 
 : "${SERVER_EXE:=Server.exe}"
 : "${SERVER_ARGS:=}"
@@ -49,10 +51,45 @@ if [[ "${STEAM_VALIDATE}" == "1" ]]; then
 fi
 update_args+=" +quit"
 
+run_steamcmd_update() {
+  local attempt=1
+  local output_file=""
+
+  while [[ "${attempt}" -le "${STEAMCMD_MAX_RETRIES}" ]]; do
+    output_file="$(mktemp)"
+
+    echo "[steamcmd-wine-core] Updating app ${STEAM_APP_ID} (attempt ${attempt}/${STEAMCMD_MAX_RETRIES})..."
+
+    if "${STEAMCMD_DIR}/steamcmd.sh" ${update_args} 2>&1 | tee "${output_file}"; then
+      rm -f "${output_file}"
+      return 0
+    fi
+
+    if grep -Fq "state is 0x6 after update job" "${output_file}"; then
+      echo "[steamcmd-wine-core] SteamCMD returned state 0x6 for app ${STEAM_APP_ID}."
+      echo "[steamcmd-wine-core] This is often transient. Retrying after ${STEAMCMD_RETRY_DELAY}s..."
+    else
+      echo "[steamcmd-wine-core] SteamCMD update failed with a non-retryable error."
+      rm -f "${output_file}"
+      return 1
+    fi
+
+    rm -f "${output_file}"
+
+    if [[ "${attempt}" -lt "${STEAMCMD_MAX_RETRIES}" ]]; then
+      sleep "${STEAMCMD_RETRY_DELAY}"
+    fi
+
+    attempt=$((attempt + 1))
+  done
+
+  echo "[steamcmd-wine-core] SteamCMD update failed after ${STEAMCMD_MAX_RETRIES} attempts."
+  return 1
+}
+
 if [[ "${STEAMCMD}" == "1" ]]; then
-  echo "[steamcmd-wine-core] Updating app ${STEAM_APP_ID}..."
-  "${STEAMCMD_DIR}/steamcmd.sh" ${update_args}
-  echo "[steamcmd-linux-core] ... End of updating app ${STEAM_APP_ID}"
+  run_steamcmd_update
+  echo "[steamcmd-wine-core] ... End of updating app ${STEAM_APP_ID}"
 fi
 
 ensure_steamclient_symlink
@@ -64,7 +101,7 @@ if [[ "${ENABLE_TERMINAL}" == "1" ]]; then
     exec /bin/bash -l
   fi
 
-  echo "[steamcmd-linux-core] No TTY detected. Keeping the container alive so you can attach a shell (e.g., docker exec -it <container> bash)."
+  echo "[steamcmd-wine-core] No TTY detected. Keeping the container alive so you can attach a shell (e.g., docker exec -it <container> bash)."
   exec tail -f /dev/null
 fi
 
