@@ -13,6 +13,7 @@ set -euo pipefail
 : "${STEAM_VALIDATE:=0}"
 : "${STEAMCMD_MAX_RETRIES:=3}"
 : "${STEAMCMD_RETRY_DELAY:=10}"
+: "${STEAMCMD_FAILURE_MODE:=ignore}"
 
 : "${SERVER_CMD:=./server.sh}"
 
@@ -82,8 +83,32 @@ run_steamcmd_update() {
   return 1
 }
 
+handle_steamcmd_failure() {
+  if [[ "${STEAMCMD_FAILURE_MODE}" == "exit" ]]; then
+    echo "[steamcmd-linux-core] SteamCMD update failed. Exiting container because STEAMCMD_FAILURE_MODE=exit."
+    return 1
+  fi
+
+  if [[ "${STEAMCMD_FAILURE_MODE}" == "keepalive" ]]; then
+    echo "[steamcmd-linux-core] SteamCMD update failed. Keeping container alive because STEAMCMD_FAILURE_MODE=keepalive."
+    echo "[steamcmd-linux-core] You can inspect logs and files, then restart manually when ready."
+    exec tail -f /dev/null
+  fi
+
+  if [[ "${STEAMCMD_FAILURE_MODE}" == "ignore" ]]; then
+    echo "[steamcmd-linux-core] SteamCMD update failed, but continuing startup because STEAMCMD_FAILURE_MODE=ignore."
+    return 0
+  fi
+
+  echo "[steamcmd-linux-core] Invalid STEAMCMD_FAILURE_MODE value: ${STEAMCMD_FAILURE_MODE}."
+  echo "[steamcmd-linux-core] Allowed values: exit, keepalive, ignore."
+  return 1
+}
+
 if [[ "${STEAMCMD}" == "1" ]]; then
-  run_steamcmd_update
+  if ! run_steamcmd_update; then
+    handle_steamcmd_failure
+  fi
   echo "[steamcmd-linux-core] ... End of updating app ${STEAM_APP_ID}"
 fi
 
