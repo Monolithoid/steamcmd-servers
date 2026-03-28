@@ -47,24 +47,42 @@ flowchart LR
 - Persistent volumes mounted from Coolify (or plain Docker) must be writable by the in-container `steam` user (UID/GID 1000 by default). On the host that runs Coolify, adjust ownership on the target folder before deploying, for example: `sudo chown -R 1000:1000 /path/to/your/data`.
 - Expose and open the game ports on your firewall/router (and in Coolify if applicable) so players can reach the server. Example on a Debian/Ubuntu host using UFW: `sudo ufw allow 2456:2458/udp` (adjust ports/protocols per game).
 
-## Assetto Corsa troubleshooting
+## Steam account mode (all core images)
 
-### `ERROR! Failed to install app '302550' (No subscription)`
+`steamcmd-linux-core` and `steamcmd-wine-core` both support authenticated SteamCMD login.
 
-This SteamCMD error means the Steam account used in `login` has no license for app `302550` (Assetto Corsa Dedicated Server tool).
+- Default mode: `STEAM_LOGIN=anonymous`
+- Authenticated mode: define `STEAM_LOGIN` and `STEAM_PASSWORD`
+
+Example:
+
+```bash
+docker run --rm \
+  -e STEAM_APP_ID=123456 \
+  -e STEAM_LOGIN=my_steam_user \
+  -e STEAM_PASSWORD='my_steam_password' \
+  monolithoid/steamcmd-linux-core:latest
+```
+
+> You should pass credentials via Docker/Coolify secrets whenever possible, not plain text env vars.
+
+## SteamCMD troubleshooting (generic)
+
+### `ERROR! Failed to install app '<app_id>' (No subscription)`
+
+This SteamCMD error usually means the current login does not own the requested app/tool license.
 
 Recommended checks:
 
-1. Use a Steam account that **owns Assetto Corsa**.
-2. Run SteamCMD once manually and verify login does not request Steam Guard repeatedly.
-3. If Steam Guard is enabled, complete the code challenge in SteamCMD and then retry.
-4. Retry with these commands:
+1. Confirm the Steam account owns the dedicated server app/tool for the target `STEAM_APP_ID`.
+2. Retry with authenticated mode (`STEAM_LOGIN` + `STEAM_PASSWORD`) instead of `anonymous`.
+3. Run SteamCMD once manually to complete any Steam Guard challenge.
+
+Generic verification command:
 
 ```bash
 steamcmd \
   +login <steam_user> <steam_password> \
-  +app_update 302550 validate \
+  +app_update <app_id> validate \
   +quit
 ```
-
-If you use `+login anonymous`, app `302550` will return `No subscription`.

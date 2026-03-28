@@ -6,6 +6,10 @@ services:
     container_name: assetto-corsa
     restart: unless-stopped
     environment:
+      # Optionnel: utile pour les apps qui refusent login anonymous
+      # STEAM_LOGIN: "mon_compte_steam"
+      # STEAM_PASSWORD: "mon_mot_de_passe_steam"
+
       # Tu peux override si besoin
       # SERVER_CMD: >
       #   ./acServer --config ./cfg/server_cfg.ini --entry_list ./cfg/entry_list.ini
