@@ -7,6 +7,9 @@ services:
     restart: unless-stopped
     environment:
       STEAM_APP_ID: "3809400"
+      # Optionnel: utile pour les apps qui refusent login anonymous
+      # STEAM_LOGIN: "mon_compte_steam"
+      # STEAM_PASSWORD: "mon_mot_de_passe_steam"
 
       # Démarrage recommandé par la documentation officielle
       SERVER_EXE: "StarRuptureServerEOS.exe"
