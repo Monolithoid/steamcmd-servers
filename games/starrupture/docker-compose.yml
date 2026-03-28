@@ -7,11 +7,24 @@ services:
     restart: unless-stopped
     environment:
       STEAM_APP_ID: "3809400"
-      SERVER_EXE: "<EXECUTABLE_SERVEUR_WINDOWS>"
-      SERVER_ARGS: "<ARGUMENTS_SERVEUR>"
+
+      # Démarrage recommandé par la documentation officielle
+      SERVER_EXE: "StarRuptureServerEOS.exe"
+      SERVER_ARGS: "-Log -Port=7777 -RCWebControlDisable -RCWebInterfaceDisable"
+
+      # Génération DSSettings.txt (désactiver avec 0)
+      SR_WRITE_DSSETTINGS: "1"
+      SR_DSSETTINGS_PATH: "/opt/server/DSSettings.txt"
+      SR_SESSION_NAME: "StarRuptureServer"
+      SR_SAVE_GAME_INTERVAL: "300"
+      SR_START_NEW_GAME: "false"
+      SR_LOAD_SAVED_GAME: "true"
+      SR_SAVE_GAME_NAME: "AutoSave0.sav"
+
+      # Optionnel: coller le JSON généré sur starrupture-utilities.com/passwords
+      SR_ADMIN_PASSWORD_JSON: ""
+      SR_PLAYER_PASSWORD_JSON: ""
     volumes:
       - ./data:/opt/server
     ports:
-      # Ajoute ici les ports requis par StarRupture.
-      # - "27015:27015/udp"
-      # - "27016:27016/udp"
+      - "7777:7777/udp"
