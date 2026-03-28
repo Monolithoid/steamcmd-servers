@@ -6,6 +6,10 @@ ENV STEAM_APP_ID=3809400
 # Force Windows install via SteamCMD
 ENV STEAMCMD_PLATFORM=windows
 
+# StarRupture serveur binaire 64-bit, on force un préfixe Wine 64-bit dédié
+ENV WINEARCH=win64
+ENV WINEPREFIX=/home/steam/.wine-starrupture
+
 # Official dedicated server startup recommendation
 ENV SERVER_EXE="StarRuptureServerEOS.exe"
 ENV SERVER_ARGS="-Log -Port=7777 -RCWebControlDisable -RCWebInterfaceDisable"
