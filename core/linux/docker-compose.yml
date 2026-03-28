@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  steamcmd-linux-core:
+    image: monolithoid/steamcmd-linux-core:latest
+    container_name: steamcmd-linux-core
+    restart: unless-stopped
+    environment:
+      STEAM_APP_ID: "000000"
+      SERVER_CMD: "./server.sh"
+
+      # Mettre à 0 pour désactiver toute tentative de mise à jour SteamCMD au démarrage.
+      STEAMCMD: "1"
+
+      # Optionnel: utile pour les apps qui refusent login anonymous
+      # STEAM_LOGIN: "mon_compte_steam"
+      # STEAM_PASSWORD: "mon_mot_de_passe_steam"
+      # STEAM_BRANCH: "public"
+      # STEAM_VALIDATE: "0"
+    volumes:
+      - ./data:/opt/server
+    ports:
+      - "27015:27015/udp"
