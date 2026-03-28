@@ -58,6 +58,12 @@ Tu peux générer ces JSON depuis : https://starrupture-utilities.com/passwords
 
 Un exemple prêt à l'emploi est fourni dans `games/starrupture/docker-compose.yml`.
 
+## Dépannage
+
+- Erreur `ShellExecuteEx failed: Bad EXE format ... StarRuptureServerEOS.exe` :
+  l'exécutable est 64-bit. Cette image force désormais `WINEARCH=win64` avec un
+  préfixe dédié (`WINEPREFIX=/home/steam/.wine-starrupture`) pour éviter un préfixe 32-bit incompatible.
+
 ## Notes importantes (réseau et sécurité)
 
 - Ce jeu nécessite une connexion client vers l'IP WAN publique du serveur.
