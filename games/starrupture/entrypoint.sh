@@ -36,14 +36,38 @@ validate_boolean_value() {
   return 0
 }
 
-write_dssettings_file() {
-  local dssettings_dir=""
+is_target_writable() {
+  local target_file="$1"
+  local target_dir=""
 
+  target_dir="$(dirname "${target_file}")"
+
+  mkdir -p "${target_dir}"
+
+  if [[ -e "${target_file}" ]]; then
+    if [[ -w "${target_file}" ]]; then
+      return 0
+    fi
+
+    return 1
+  fi
+
+  if [[ -w "${target_dir}" ]]; then
+    return 0
+  fi
+
+  return 1
+}
+
+write_dssettings_file() {
   validate_boolean_value "SR_START_NEW_GAME" "${SR_START_NEW_GAME}"
   validate_boolean_value "SR_LOAD_SAVED_GAME" "${SR_LOAD_SAVED_GAME}"
 
-  dssettings_dir="$(dirname "${SR_DSSETTINGS_PATH}")"
-  mkdir -p "${dssettings_dir}"
+  if ! is_target_writable "${SR_DSSETTINGS_PATH}"; then
+    echo "[starrupture] Warning: Cannot write DSSettings file at ${SR_DSSETTINGS_PATH} (permission denied)." >&2
+    echo "[starrupture] Hint: On Coolify with a persistent volume, set file owner to uid/gid 1000 or set SR_WRITE_DSSETTINGS=0 to keep the existing file." >&2
+    return 0
+  fi
 
   cat > "${SR_DSSETTINGS_PATH}" <<DSSETTINGS
 {
@@ -61,14 +85,15 @@ DSSETTINGS
 write_optional_json_file() {
   local target_file="$1"
   local file_content="$2"
-  local target_dir=""
 
   if [[ -z "${file_content}" ]]; then
     return 0
   fi
 
-  target_dir="$(dirname "${target_file}")"
-  mkdir -p "${target_dir}"
+  if ! is_target_writable "${target_file}"; then
+    echo "[starrupture] Warning: Cannot write file ${target_file} (permission denied). Existing file will be kept." >&2
+    return 0
+  fi
 
   printf '%s\n' "${file_content}" > "${target_file}"
   echo "[starrupture] Wrote file: ${target_file}"

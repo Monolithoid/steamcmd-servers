@@ -65,3 +65,4 @@ Un exemple prêt à l'emploi est fourni dans `games/starrupture/docker-compose.y
 - Vérifie la publication de sécurité indiquée sur la page officielle de configuration.
 - Assure-toi que le dossier monté depuis Coolify est possédé par l'UID/GID `1000` (`steam`) :
   `sudo chown -R 1000:1000 /path/to/your/data`
+- Si tu gardes un `DSSettings.txt` déjà existant en lecture seule, définis `SR_WRITE_DSSETTINGS=0` pour éviter la régénération automatique.
