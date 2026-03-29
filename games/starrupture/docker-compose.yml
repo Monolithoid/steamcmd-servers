@@ -6,6 +6,7 @@ services:
     container_name: starrupture
     restart: unless-stopped
     environment:
+      STEAMCMD: 0
       STEAM_APP_ID: "3809400"
       # Optionnel: utile pour les apps qui refusent login anonymous
       # STEAM_LOGIN: "mon_compte_steam"

@@ -1,6 +1,6 @@
 # monolithoid/starrupture-server
 
-Serveur dédié StarRupture basé sur SteamCMD + Wine, mis à jour automatiquement à chaque démarrage.
+Serveur dédié StarRupture basé sur SteamCMD + Wine, orienté mise à jour manuelle (mise à jour au démarrage désactivée par défaut).
 Cette image applique les recommandations de démarrage et la structure de configuration publiées ici :
 https://wiki.starrupture-utilities.com/en/dedicated-server/configuration
 

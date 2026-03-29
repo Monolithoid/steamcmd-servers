@@ -48,28 +48,67 @@ flowchart LR
 - Expose and open the game ports on your firewall/router (and in Coolify if applicable) so players can reach the server. Example on a Debian/Ubuntu host using UFW: `sudo ufw allow 2456:2458/udp` (adjust ports/protocols per game).
 
 
-## Update strategy (recommended)
+## Update strategy (manual-first)
 
-Managing game updates directly from the VPS (manual recurring action) can be useful for emergency control, but for day-to-day operations this repository is designed to be more reliable with an **image-centric workflow**:
+SteamCMD update during container startup is now **disabled by default** across this repository (`STEAMCMD=0`).
 
-1. Build/version a new image when the game startup logic changes.
-2. Keep server binaries and saves in persistent volumes.
-3. Run SteamCMD update/validate from container start or via scheduled container restart.
+Reasoning:
 
-Why this is usually better than host-only manual updates:
+1. Steam connectivity can be intermittent.
+2. Anonymous Steam access is not guaranteed for all app IDs.
+3. Authenticated access can be blocked by Steam Guard in headless startup contexts.
 
-- Reproducibility: same image/tag = same runtime behavior across environments.
-- Rollback: you can pin a previous image tag quickly if an update breaks something.
-- Lower drift: fewer host-specific scripts and less hidden VPS state.
-- Easier automation: Coolify/Portainer and CI/CD naturally fit image updates.
+### Recommended operations model
 
-A practical compromise is to use a **hybrid model**:
+1. **Prepare binaries manually on the VPS** using a temporary maintenance run (`STEAMCMD=1`, `START_SERVER=0`).
+2. **Keep runtime containers in stable mode** with `STEAMCMD=0` so restart operations do not depend on Steam availability.
+3. **Perform updates in planned maintenance windows** only, then restart production containers.
 
-- Keep update logic in containers/images (source of truth).
-- Trigger updates from the VPS using a controlled operation (for example, a weekly `docker compose pull && docker compose up -d` plus a maintenance window).
-- Keep one manual emergency command path for hotfixes.
+This model reduces startup failures and gives explicit operator control over update timing.
 
-This gives operational control without losing reproducibility.
+### Manual update directly on the VPS (without Docker Compose)
+
+If you prefer to run SteamCMD directly on the host, you can install SteamCMD on the VPS and update the mounted server directory before starting/restarting containers.
+
+1. Install SteamCMD on the VPS (Debian/Ubuntu example):
+
+```bash
+sudo dpkg --add-architecture i386
+sudo apt-get update
+sudo apt-get install -y steamcmd
+```
+
+2. Update a Linux dedicated server directly into your persistent folder:
+
+```bash
+steamcmd \
+  +force_install_dir /opt/gaming/my-linux-server \
+  +login <steam_user> <steam_password> \
+  +app_update <app_id> validate \
+  +quit
+```
+
+3. Update a Windows dedicated server payload (for Wine runtime) from the VPS:
+
+```bash
+steamcmd \
+  +@sSteamCmdForcePlatformType windows \
+  +force_install_dir /opt/gaming/my-windows-server \
+  +login <steam_user> <steam_password> \
+  +app_update <app_id> validate \
+  +quit
+```
+
+4. Ensure ownership for the runtime container user (UID/GID 1000), then restart your server container with `STEAMCMD=0`:
+
+```bash
+sudo chown -R 1000:1000 /opt/gaming/my-linux-server
+```
+
+Notes:
+- Replace `<app_id>` with the dedicated server app ID.
+- If the app supports anonymous access, you can use `+login anonymous`.
+- If Steam Guard is requested, complete it once in an interactive VPS session, then rerun the command.
 
 ## Steam account mode (all core images)
 

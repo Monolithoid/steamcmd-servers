@@ -1,6 +1,6 @@
 # monolithoid/rust-server
 
-Dedicated Rust server built on SteamCMD, automatically updated at each start.
+Dedicated Rust server built on SteamCMD, manual-update ready (startup update disabled by default).
 Optimized for simple use via Docker or Coolify.
 
 ## Quick start

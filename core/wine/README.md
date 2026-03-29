@@ -19,7 +19,7 @@ This image provides a base to run Windows dedicated servers on Linux via Wine. I
 - `LD_LIBRARY_PATH` (default `/opt/steamcmd/linux64`): includes the Steam client libraries so games can load `steamclient.so` without extra links.
 - `ENABLE_TERMINAL` (default `0`): when `1`, run SteamCMD update then drop into a shell in `SERVER_DIR` instead of starting the server (useful for debugging via Coolify or Docker). If no TTY is available, the container stays alive so you can attach later (for example with `docker exec -it`). Set to `0` to start the server normally after the update.
 - `START_SERVER` (default `1`): when `0`, run the SteamCMD update steps then exit without launching the server (useful for update-only runs).
-- `STEAMCMD` (default `1`): when `0`, skip all SteamCMD update attempts at startup.
+- `STEAMCMD` (default `0`): when `0`, skip all SteamCMD update attempts at startup. Use `1` only during controlled manual maintenance windows from the VPS host.
 
 The entrypoint also creates `/home/steam/.steam/sdk64/steamclient.so` as a symlink to the SteamCMD `steamclient.so`, so games expecting that path can load the library without additional setup.
 
@@ -37,10 +37,31 @@ After SteamCMD finishes, the entrypoint creates `/home/steam/.steam/sdk64/steamc
 4. `steamcmd.sh` runs this sequence, downloading or updating the server files in `SERVER_DIR`.
 5. The Windows executable (`SERVER_EXE`) is launched via `wine` with `SERVER_ARGS` from `SERVER_DIR`.
 
+## Recommended manual update flow (VPS)
+
+Because Steam access can be unreliable (anonymous access restrictions, Steam Guard challenges, transient outages), this image now defaults to **no update on startup**.
+
+1. Keep `STEAMCMD=0` for normal runtime containers.
+2. Install/update Windows server binaries manually from the VPS before first launch (and for each maintenance update).
+3. Start/restart the runtime container only after binaries are present in the mounted `SERVER_DIR`.
+
+Manual install/update command example from the VPS:
+
+```bash
+docker run --rm -it \
+  -v /opt/gaming/my-windows-server:/opt/server \
+  -e STEAMCMD=1 \
+  -e START_SERVER=0 \
+  -e STEAM_APP_ID=123456 \
+  -e STEAM_LOGIN=your_steam_login \
+  -e STEAM_PASSWORD=your_steam_password \
+  -e STEAMCMD_PLATFORM=windows \
+  monolithoid/steamcmd-wine-core:latest
+```
+
+Then run your regular server container with `STEAMCMD=0`.
+
 ## Usage example
-
-In `docker-compose.yml`, set `STEAMCMD: "0"` in `environment` to fully disable update attempts on container startup.
-
 
 ```bash
 docker run --rm \
