@@ -11,7 +11,7 @@ services:
     environment:
       ENABLE_TERMINAL: 0
       START_SERVER: 1
-      STEAMCMD: 1
+      STEAMCMD: 0
       # Optionnel: si l'app Steam nécessite un compte non-anonyme
       # STEAM_LOGIN: "mon_compte_steam"
       # STEAM_PASSWORD: "mon_mot_de_passe_steam"

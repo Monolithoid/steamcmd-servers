@@ -4,7 +4,7 @@ set -euo pipefail
 : "${STEAMCMD_DIR:=/opt/steamcmd}"
 : "${SERVER_DIR:=/opt/server}"
 : "${WINEPREFIX:=/home/steam/.wine}"
-: "${STEAMCMD:=1}"
+: "${STEAMCMD:=0}"
 : "${ENABLE_TERMINAL:=0}"
 : "${START_SERVER:=1}"
 : "${STEAMCMD_PLATFORM:=}"

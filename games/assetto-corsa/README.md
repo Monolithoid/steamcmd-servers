@@ -1,6 +1,6 @@
 # monolithoid/assetto-corsa-server
 
-Dedicated Assetto Corsa server built on SteamCMD, automatically updated at each start.
+Dedicated Assetto Corsa server built on SteamCMD, manual-update ready (startup update disabled by default).
 Designed for simple use via Docker or Coolify.
 
 ## Quick start
