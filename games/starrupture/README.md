@@ -79,3 +79,4 @@ Un exemple prêt à l'emploi est fourni dans `games/starrupture/docker-compose.y
 - Assure-toi que le dossier monté depuis Coolify est possédé par l'UID/GID `1000` (`steam`) :
   `sudo chown -R 1000:1000 /path/to/your/data`
 - Si tu gardes un `DSSettings.txt` déjà existant en lecture seule, définis `SR_WRITE_DSSETTINGS=0` pour éviter la régénération automatique.
+- Si tu obtiens `WINEARCH set to win64 but '/home/steam/.wine-starrupture' is a 32-bit installation`, ajoute `WINE_MISMATCH_STRATEGY=switch` pour laisser le conteneur basculer automatiquement vers un préfixe compatible **sans suppression**.
