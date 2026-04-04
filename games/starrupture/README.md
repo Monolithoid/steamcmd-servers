@@ -41,7 +41,7 @@ steamcmd \
 
 1. Crée ou met à jour `DSSettings.txt` (si `SR_WRITE_DSSETTINGS=1`).
 2. Écrit `Password.json` et `PlayerPassword.json` si tu fournis les variables dédiées.
-3. Lance `StarRuptureServerEOS.exe` avec les arguments recommandés.
+3. Vérifie automatiquement le chemin de l’exécutable serveur et lance le premier binaire trouvé.
 
 ## Variables de configuration StarRupture
 
@@ -49,6 +49,15 @@ steamcmd \
 
 - `SERVER_EXE` : exécutable du serveur (par défaut `StarRuptureServerEOS.exe`).
 - `SERVER_ARGS` : arguments de lancement (par défaut `-Log -Port=7777 -RCWebControlDisable -RCWebInterfaceDisable`).
+
+Si `SERVER_EXE` pointe vers un fichier absent, l’image essaie automatiquement ces chemins :
+
+1. `StarRuptureServerEOS.exe`
+2. `StarRuptureServerEOS-Win64-Shipping.exe`
+3. `StarRupture/Binaries/Win64/StarRuptureServerEOS-Win64-Shipping.exe`
+4. Sinon, recherche automatique dans `/opt/server` d’un fichier `StarRuptureServerEOS*.exe`.
+
+Le segment `Win64` dans un chemin de binaire est un dossier du jeu (Unreal), pas la variable Wine `WINEARCH`.
 
 ### DSSettings.txt
 

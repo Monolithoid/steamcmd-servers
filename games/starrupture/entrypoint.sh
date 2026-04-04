@@ -12,6 +12,52 @@ set -euo pipefail
 : "${SR_ADMIN_PASSWORD_JSON:=}"
 : "${SR_PLAYER_PASSWORD_JSON:=}"
 
+resolve_server_executable() {
+  local configured_executable="${SERVER_EXE:-}"
+  local candidate_executable=""
+  local discovered_executable=""
+  local executable_candidates=(
+    "${configured_executable}"
+    "StarRuptureServerEOS.exe"
+    "StarRuptureServerEOS-Win64-Shipping.exe"
+    "StarRupture/Binaries/Win64/StarRuptureServerEOS-Win64-Shipping.exe"
+  )
+
+  for candidate_executable in "${executable_candidates[@]}"; do
+    if [[ -z "${candidate_executable}" ]]; then
+      continue
+    fi
+
+    if [[ -f "${SERVER_DIR}/${candidate_executable}" ]]; then
+      if [[ "${candidate_executable}" != "${configured_executable}" ]]; then
+        echo "[starrupture] Warning: SERVER_EXE='${configured_executable}' introuvable."
+        echo "[starrupture] Utilisation automatique de '${candidate_executable}'."
+      fi
+
+      export SERVER_EXE="${candidate_executable}"
+      return 0
+    fi
+  done
+
+  discovered_executable="$(
+    find "${SERVER_DIR}" -maxdepth 8 -type f \
+      \( -iname "StarRuptureServerEOS.exe" -o -iname "StarRuptureServerEOS-Win64-Shipping.exe" \) \
+      | head -n 1
+  )"
+
+  if [[ -n "${discovered_executable}" ]]; then
+    discovered_executable="${discovered_executable#${SERVER_DIR}/}"
+    echo "[starrupture] Warning: SERVER_EXE='${configured_executable}' introuvable."
+    echo "[starrupture] Exécutable détecté automatiquement: '${discovered_executable}'."
+    export SERVER_EXE="${discovered_executable}"
+    return 0
+  fi
+
+  echo "[starrupture] Error: Aucun exécutable serveur trouvé dans ${SERVER_DIR}." >&2
+  echo "[starrupture] Vérifie ton installation SteamCMD (app 3809400) et la variable SERVER_EXE." >&2
+  return 1
+}
+
 print_settings_summary() {
   echo "[starrupture] SR_WRITE_DSSETTINGS=${SR_WRITE_DSSETTINGS}"
   echo "[starrupture] SR_DSSETTINGS_PATH=${SR_DSSETTINGS_PATH}"
@@ -110,6 +156,7 @@ main() {
 
   write_optional_json_file "${SERVER_DIR}/Password.json" "${SR_ADMIN_PASSWORD_JSON}"
   write_optional_json_file "${SERVER_DIR}/PlayerPassword.json" "${SR_PLAYER_PASSWORD_JSON}"
+  resolve_server_executable
 
   exec /entrypoint.sh
 }
