@@ -1,6 +1,8 @@
 # monolithoid/starrupture-server
 
-Serveur dédié StarRupture basé sur SteamCMD + Wine, orienté mise à jour manuelle (mise à jour au démarrage désactivée par défaut).
+Serveur dédié StarRupture basé sur Wine runtime.
+Les binaires sont installés **manuellement sur l’hébergement** (hors conteneur), puis montés dans `/opt/server`.
+
 Cette image applique les recommandations de démarrage et la structure de configuration publiées ici :
 https://wiki.starrupture-utilities.com/en/dedicated-server/configuration
 
@@ -10,7 +12,6 @@ https://wiki.starrupture-utilities.com/en/dedicated-server/configuration
 docker run -d \
   --name starrupture \
   -p 7777:7777/udp \
-  -e STEAM_APP_ID="3809400" \
   -e SERVER_EXE="StarRuptureServerEOS.exe" \
   -e SERVER_ARGS="-Log -Port=7777 -RCWebControlDisable -RCWebInterfaceDisable" \
   -e SR_WRITE_DSSETTINGS="1" \
@@ -23,12 +24,24 @@ docker run -d \
   monolithoid/starrupture-server:latest
 ```
 
+## Commande SteamCMD manuelle (obligatoire)
+
+Exécuter cette commande sur l’hôte pour installer/mettre à jour StarRupture dans le dossier monté par le conteneur :
+
+```bash
+steamcmd \
+  +@sSteamCmdForcePlatformType windows \
+  +force_install_dir /opt/gaming/starrupture \
+  +login <steam_user> <steam_password> \
+  +app_update 3809400 validate \
+  +quit
+```
+
 ## Ce que fait l'image au démarrage
 
-1. Met à jour/installe le serveur dédié via SteamCMD (AppID `3809400`).
-2. Crée ou met à jour `DSSettings.txt` (si `SR_WRITE_DSSETTINGS=1`).
-3. Écrit `Password.json` et `PlayerPassword.json` si tu fournis les variables dédiées.
-4. Lance `StarRuptureServerEOS.exe` avec les arguments recommandés.
+1. Crée ou met à jour `DSSettings.txt` (si `SR_WRITE_DSSETTINGS=1`).
+2. Écrit `Password.json` et `PlayerPassword.json` si tu fournis les variables dédiées.
+3. Lance `StarRuptureServerEOS.exe` avec les arguments recommandés.
 
 ## Variables de configuration StarRupture
 
@@ -57,12 +70,6 @@ Tu peux générer ces JSON depuis : https://starrupture-utilities.com/passwords
 ## Exemple `docker-compose.yml`
 
 Un exemple prêt à l'emploi est fourni dans `games/starrupture/docker-compose.yml`.
-
-## Dépannage
-
-- Erreur `ShellExecuteEx failed: Bad EXE format ... StarRuptureServerEOS.exe` :
-  l'exécutable est 64-bit. Cette image force désormais `WINEARCH=win64` avec un
-  préfixe dédié (`WINEPREFIX=/home/steam/.wine-starrupture`) pour éviter un préfixe 32-bit incompatible.
 
 ## Notes importantes (réseau et sécurité)
 

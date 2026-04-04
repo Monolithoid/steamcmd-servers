@@ -6,19 +6,10 @@ services:
     container_name: steamcmd-wine-core
     restart: unless-stopped
     environment:
-      STEAM_APP_ID: "000000"
       SERVER_EXE: "Server.exe"
       SERVER_ARGS: ""
-
-      # Mettre à 0 pour désactiver toute tentative de mise à jour SteamCMD au démarrage.
-      STEAMCMD: "1"
-
-      # Optionnel: utile pour les apps qui refusent login anonymous
-      # STEAM_LOGIN: "mon_compte_steam"
-      # STEAM_PASSWORD: "mon_mot_de_passe_steam"
-      # STEAM_BRANCH: "public"
-      # STEAM_VALIDATE: "0"
-      # STEAMCMD_PLATFORM: "windows"
+      START_SERVER: "1"
+      ENABLE_TERMINAL: "0"
     volumes:
       - ./data:/opt/server
     ports:

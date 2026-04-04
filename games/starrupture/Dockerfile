@@ -1,11 +1,5 @@
 FROM monolithoid/steamcmd-wine-core:latest
 
-# StarRupture Dedicated Server AppID
-ENV STEAM_APP_ID=3809400
-
-# Force Windows install via SteamCMD
-ENV STEAMCMD_PLATFORM=windows
-
 # StarRupture serveur binaire 64-bit, on force un préfixe Wine 64-bit dédié
 ENV WINEARCH=win64
 ENV WINEPREFIX=/home/steam/.wine-starrupture
