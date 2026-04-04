@@ -1,7 +1,7 @@
 # monolithoid/rust-server
 
-Dedicated Rust server built on SteamCMD, manual-update ready (startup update disabled by default).
-Optimized for simple use via Docker or Coolify.
+Dedicated Rust server built on SteamCMD Linux core.
+Binaries should be installed/updated manually on the host, then mounted in `/opt/server`.
 
 ## Quick start
 
@@ -13,6 +13,18 @@ docker run -d \
   -p 28017:28017/tcp \
   -v $(pwd)/data:/opt/server \
   monolithoid/rust-server:latest
+```
+
+## SteamCMD manual install/update command
+
+Run this command directly on the host to install or update Rust dedicated server files:
+
+```bash
+steamcmd \
+  +force_install_dir /opt/gaming/rust \
+  +login anonymous \
+  +app_update 258550 validate \
+  +quit
 ```
 
 ## Useful variables
