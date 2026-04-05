@@ -9,6 +9,7 @@ Cette image **n’installe plus rien via SteamCMD**. Elle sert uniquement à :
 - permettre un mode terminal de debug.
 
 Le runtime installe les composants `wine64` et `wine32` (multiarch `i386`) pour conserver `win64` par défaut tout en permettant l’exécution de binaires 32-bit via `WINEARCH=win32`.
+Il inclut aussi `winetricks`, utile pour installer des dépendances Windows comme les runtimes Microsoft Visual C++.
 
 ## Variables d'environnement
 
@@ -23,6 +24,8 @@ Le runtime installe les composants `wine64` et `wine32` (multiarch `i386`) pour 
   - `error` : échoue avec un message explicite.
 - `USE_XVFB` (par défaut `1`) : démarre Wine avec `xvfb-run` pour fournir un `DISPLAY` virtuel en environnement headless.
 - `XVFB_SCREEN` (par défaut `0 1024x768x16`) : valeur passée à `xvfb-run -s "-screen ..."` pour régler l’écran virtuel.
+- `WINETRICKS_PACKAGES` (par défaut `vcrun2022`) : liste de paquets `winetricks` à installer dans le préfixe (séparateur espace ou virgule). Exemples : `vcrun2019`, `vcrun2022`, `dotnet48`.
+- `WINETRICKS_QUIET` (par défaut `1`) : passe `-q` à `winetricks` pour réduire l’interaction (`0` pour mode verbeux).
 - `ENABLE_TERMINAL` (par défaut `0`) : si `1`, ouvre un shell dans `SERVER_DIR`.
 - `START_SERVER` (par défaut `1`) : si `0`, n’exécute pas le serveur.
 
@@ -55,6 +58,33 @@ En cas de besoin, tu peux :
 1. Laisser `USE_XVFB=1` (recommandé en conteneur/headless).
 2. Ajuster la résolution/profondeur via `XVFB_SCREEN`.
 3. Désactiver explicitement (`USE_XVFB=0`) seulement si tu fournis déjà un `DISPLAY` fonctionnel.
+
+## Installer Microsoft Visual C++ Runtime via Winetricks
+
+Le runtime installe désormais **par défaut** Visual C++ 2022 via `WINETRICKS_PACKAGES=vcrun2022`.
+Tu peux surcharger la variable pour installer d’autres dépendances, ou la vider pour désactiver complètement Winetricks.
+
+Exemple (Visual C++ 2022 explicite) :
+
+```bash
+docker run --rm \
+  -v /opt/gaming/my-windows-server:/opt/server \
+  -e SERVER_EXE="MyServer.exe" \
+  -e WINETRICKS_PACKAGES="vcrun2022" \
+  monolithoid/steamcmd-wine-core:latest
+```
+
+Tu peux aussi chaîner plusieurs dépendances, par exemple :
+
+```bash
+-e WINETRICKS_PACKAGES="vcrun2019,dotnet48"
+```
+
+Pour désactiver l’installation Winetricks :
+
+```bash
+-e WINETRICKS_PACKAGES=""
+```
 
 ## Exemple de lancement
 

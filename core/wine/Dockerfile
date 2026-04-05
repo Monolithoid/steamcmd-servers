@@ -10,9 +10,12 @@ RUN apt-get update && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
       ca-certificates \
+      cabextract \
+      unzip \
       wine \
       wine32:i386 \
       wine64 \
+      winetricks \
       xvfb \
       winbind \
       tini \
