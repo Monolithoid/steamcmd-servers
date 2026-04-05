@@ -6,9 +6,13 @@ ENV SERVER_DIR=/opt/server \
     WINEARCH=win64
 
 RUN apt-get update && \
+    dpkg --add-architecture i386 && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
       ca-certificates \
       wine \
+      wine32:i386 \
+      wine64 \
       xvfb \
       winbind \
       tini \
