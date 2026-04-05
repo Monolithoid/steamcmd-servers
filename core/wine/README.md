@@ -21,6 +21,8 @@ Le runtime installe les composants `wine64` et `wine32` (multiarch `i386`) pour 
   - `switch` : **recommandé**, ne supprime rien et bascule vers un nouveau préfixe `${WINEPREFIX}-${WINEARCH}`.
   - `recreate` : supprime/recrée le préfixe courant.
   - `error` : échoue avec un message explicite.
+- `USE_XVFB` (par défaut `1`) : démarre Wine avec `xvfb-run` pour fournir un `DISPLAY` virtuel en environnement headless.
+- `XVFB_SCREEN` (par défaut `0 1024x768x16`) : valeur passée à `xvfb-run -s "-screen ..."` pour régler l’écran virtuel.
 - `ENABLE_TERMINAL` (par défaut `0`) : si `1`, ouvre un shell dans `SERVER_DIR`.
 - `START_SERVER` (par défaut `1`) : si `0`, n’exécute pas le serveur.
 
@@ -37,6 +39,22 @@ Solutions :
 1. Utiliser `WINE_MISMATCH_STRATEGY=switch` pour basculer automatiquement sur un préfixe compatible, sans suppression.
 2. Ou `WINE_MISMATCH_STRATEGY=recreate` pour forcer une recréation.
 3. Ou corriger manuellement le préfixe puis redémarrer.
+
+## Erreur `nodrv_CreateWindow` / `$DISPLAY`
+
+Si tu vois :
+
+`Application tried to create a window, but no driver could be loaded`  
+`Make sure that your X server is running and that $DISPLAY is set correctly`
+
+alors Wine essaie d’ouvrir un contexte graphique sans serveur X disponible.
+
+Le runtime active désormais `xvfb-run` par défaut (`USE_XVFB=1`) pour créer un affichage virtuel.
+En cas de besoin, tu peux :
+
+1. Laisser `USE_XVFB=1` (recommandé en conteneur/headless).
+2. Ajuster la résolution/profondeur via `XVFB_SCREEN`.
+3. Désactiver explicitement (`USE_XVFB=0`) seulement si tu fournis déjà un `DISPLAY` fonctionnel.
 
 ## Exemple de lancement
 

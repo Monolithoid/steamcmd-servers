@@ -7,6 +7,8 @@ set -euo pipefail
 : "${SERVER_EXE:=Server.exe}"
 : "${SERVER_ARGS:=}"
 : "${WINE_MISMATCH_STRATEGY:=switch}"
+: "${USE_XVFB:=1}"
+: "${XVFB_SCREEN:=0 1024x768x16}"
 
 get_prefix_architecture() {
   local prefix_path="$1"
@@ -96,6 +98,12 @@ open_terminal_mode() {
 start_windows_server() {
   echo "[wine-core] Démarrage du serveur Windows via Wine : ${SERVER_EXE} ${SERVER_ARGS}"
   cd "${SERVER_DIR}"
+
+  if [[ "${USE_XVFB}" == "1" ]]; then
+    echo "[wine-core] USE_XVFB=1, lancement via xvfb-run (DISPLAY virtuel)."
+    exec xvfb-run -a -s "-screen ${XVFB_SCREEN}" wine "${SERVER_EXE}" ${SERVER_ARGS}
+  fi
+
   exec wine "${SERVER_EXE}" ${SERVER_ARGS}
 }
 

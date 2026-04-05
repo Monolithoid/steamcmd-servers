@@ -33,6 +33,8 @@ Installe d'abord les fichiers serveur dédiés sur l'hôte (SteamCMD ou autre m�
 - `WINEARCH` : architecture Wine (défaut image: `win64`).
 - `WINEPREFIX` : préfixe Wine (défaut image: `/home/steam/.wine-abioticfactor`).
 - `WINE_MISMATCH_STRATEGY` : `switch` (recommandé), `recreate` ou vide pour erreur.
+- `USE_XVFB` : `1` par défaut pour fournir un `DISPLAY` virtuel (évite l’erreur Wine `nodrv_CreateWindow` en environnement headless).
+- `XVFB_SCREEN` : écran virtuel Xvfb (défaut `0 1024x768x16`).
 
 ## Exemple docker-compose
 
