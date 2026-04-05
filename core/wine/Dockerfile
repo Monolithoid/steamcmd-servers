@@ -18,6 +18,7 @@ RUN apt-get update && \
       wine64 \
       winetricks \
       xvfb \
+      xauth \
       winbind \
       tini \
     && rm -rf /var/lib/apt/lists/*
