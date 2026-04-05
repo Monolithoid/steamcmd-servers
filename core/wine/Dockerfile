@@ -6,13 +6,17 @@ ENV SERVER_DIR=/opt/server \
     WINEARCH=win64
 
 RUN apt-get update && \
+    sed -i 's/^Components: main$/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources && \
     dpkg --add-architecture i386 && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
       ca-certificates \
+      cabextract \
+      unzip \
       wine \
       wine32:i386 \
       wine64 \
+      winetricks \
       xvfb \
       winbind \
       tini \
