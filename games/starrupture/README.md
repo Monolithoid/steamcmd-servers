@@ -1,10 +1,7 @@
 # monolithoid/starrupture-server
 
-Serveur dédié StarRupture basé sur Wine runtime.
+Serveur dédié StarRupture basé sur le runtime Wine core.
 Les binaires sont installés **manuellement sur l’hébergement** (hors conteneur), puis montés dans `/opt/server`.
-
-Cette image applique les recommandations de démarrage et la structure de configuration publiées ici :
-https://wiki.starrupture-utilities.com/en/dedicated-server/configuration
 
 ## Démarrage rapide
 
@@ -14,12 +11,6 @@ docker run -d \
   -p 7777:7777/udp \
   -e SERVER_EXE="StarRuptureServerEOS.exe" \
   -e SERVER_ARGS="-Log -Port=7777 -RCWebControlDisable -RCWebInterfaceDisable" \
-  -e SR_WRITE_DSSETTINGS="1" \
-  -e SR_SESSION_NAME="StarRuptureServer" \
-  -e SR_SAVE_GAME_INTERVAL="300" \
-  -e SR_START_NEW_GAME="false" \
-  -e SR_LOAD_SAVED_GAME="true" \
-  -e SR_SAVE_GAME_NAME="AutoSave0.sav" \
   -v $(pwd)/data:/opt/server \
   monolithoid/starrupture-server:latest
 ```
@@ -37,44 +28,34 @@ steamcmd \
   +quit
 ```
 
-## Ce que fait l'image au démarrage
+## Exemple `DSSettings.txt` (à placer côté serveur)
 
-1. Crée ou met à jour `DSSettings.txt` (si `SR_WRITE_DSSETTINGS=1`).
-2. Écrit `Password.json` et `PlayerPassword.json` si tu fournis les variables dédiées.
-3. Vérifie automatiquement le chemin de l’exécutable serveur et lance le premier binaire trouvé.
+Crée le fichier dans ton volume serveur, par exemple :
 
-## Variables de configuration StarRupture
+- sur l’hôte : `/opt/gaming/starrupture/DSSettings.txt`
+- dans le conteneur : `/opt/server/DSSettings.txt`
 
-### Paramètres de lancement
+Exemple minimal :
+
+```json
+{
+  "SessionName": "StarRuptureServer",
+  "SaveGameInterval": "300",
+  "StartNewGame": "false",
+  "LoadSavedGame": "true",
+  "SaveGameName": "AutoSave0.sav"
+}
+```
+
+## Variables de configuration
 
 - `SERVER_EXE` : exécutable du serveur (par défaut `StarRuptureServerEOS.exe`).
 - `SERVER_ARGS` : arguments de lancement (par défaut `-Log -Port=7777 -RCWebControlDisable -RCWebInterfaceDisable`).
+- `WINEARCH` : fixé à `win64` dans l’image.
+- `WINEPREFIX` : préfixe Wine dédié (`/home/steam/.wine-starrupture`).
+- `WINE_MISMATCH_STRATEGY` : hérité du runtime wine core (`switch` par défaut).
 
-Si `SERVER_EXE` pointe vers un fichier absent, l’image essaie automatiquement ces chemins :
-
-1. `StarRuptureServerEOS.exe`
-2. `StarRuptureServerEOS-Win64-Shipping.exe`
-3. `StarRupture/Binaries/Win64/StarRuptureServerEOS-Win64-Shipping.exe`
-4. Sinon, recherche automatique dans `/opt/server` d’un fichier `StarRuptureServerEOS*.exe`.
-
-Le segment `Win64` dans un chemin de binaire est un dossier du jeu (Unreal), pas la variable Wine `WINEARCH`.
-
-### DSSettings.txt
-
-- `SR_WRITE_DSSETTINGS` : `1` pour générer automatiquement le fichier, `0` pour conserver ton fichier existant.
-- `SR_DSSETTINGS_PATH` : chemin du fichier (par défaut `/opt/server/DSSettings.txt`).
-- `SR_SESSION_NAME` : nom de session du monde (max conseillé 20 caractères).
-- `SR_SAVE_GAME_INTERVAL` : intervalle de sauvegarde en secondes (`300` recommandé).
-- `SR_START_NEW_GAME` : `true` ou `false`.
-- `SR_LOAD_SAVED_GAME` : `true` ou `false`.
-- `SR_SAVE_GAME_NAME` : fichier de sauvegarde (par défaut `AutoSave0.sav`).
-
-### Mots de passe (optionnel)
-
-- `SR_ADMIN_PASSWORD_JSON` : contenu complet de `Password.json`.
-- `SR_PLAYER_PASSWORD_JSON` : contenu complet de `PlayerPassword.json`.
-
-Tu peux générer ces JSON depuis : https://starrupture-utilities.com/passwords
+Si `SERVER_EXE` est incorrect, le conteneur échouera au démarrage. Vérifie le chemin de l’exécutable dans ton volume monté (`/opt/server`).
 
 ## Exemple `docker-compose.yml`
 
@@ -87,5 +68,4 @@ Un exemple prêt à l'emploi est fourni dans `games/starrupture/docker-compose.y
 - Vérifie la publication de sécurité indiquée sur la page officielle de configuration.
 - Assure-toi que le dossier monté depuis Coolify est possédé par l'UID/GID `1000` (`steam`) :
   `sudo chown -R 1000:1000 /path/to/your/data`
-- Si tu gardes un `DSSettings.txt` déjà existant en lecture seule, définis `SR_WRITE_DSSETTINGS=0` pour éviter la régénération automatique.
 - Si tu obtiens `WINEARCH set to win64 but '/home/steam/.wine-starrupture' is a 32-bit installation`, ajoute `WINE_MISMATCH_STRATEGY=switch` pour laisser le conteneur basculer automatiquement vers un préfixe compatible **sans suppression**.
