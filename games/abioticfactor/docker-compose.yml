@@ -6,15 +6,9 @@ services:
     container_name: abioticfactor
     restart: unless-stopped
     environment:
-      # Runtime only: les binaires doivent être installés manuellement sur l'hôte
-      STEAMCMD: 0
-
       # Optionnel: adapte selon ton exécutable dédié
-      # SERVER_EXE: "AbioticFactor/Binaries/Win64/AbioticFactorServer-Win64-Shipping.exe"
-      # SERVER_ARGS: "-log -port=7777 -queryport=27015"
-
-      # Optionnel: stratégie de gestion du préfixe Wine
-      # WINE_MISMATCH_STRATEGY: switch
+      SERVER_EXE: "AbioticFactorServer.exe"
+      SERVER_ARGS: "-log -port=7777 -queryport=27015"
     volumes:
       - /opt/gaming/abioticfactor:/opt/server
     ports:
