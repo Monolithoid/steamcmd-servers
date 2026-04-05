@@ -14,7 +14,7 @@ Cette image **n’installe plus rien via SteamCMD**. Elle sert uniquement à :
 - `SERVER_EXE` (par défaut `Server.exe`) : exécutable Windows à lancer.
 - `SERVER_ARGS` (par défaut vide) : arguments de lancement.
 - `WINEPREFIX` (par défaut `/home/steam/.wine`) : préfixe Wine.
-- `WINEARCH` (optionnel) : architecture demandée pour le préfixe (`win64` ou `win32`).
+- `WINEARCH` (par défaut `win64`) : architecture demandée pour le préfixe (`win64` ou `win32`).
 - `WINE_MISMATCH_STRATEGY` (par défaut `switch`) : stratégie si l’architecture du préfixe existant ne correspond pas à `WINEARCH`.
   - `switch` : **recommandé**, ne supprime rien et bascule vers un nouveau préfixe `${WINEPREFIX}-${WINEARCH}`.
   - `recreate` : supprime/recrée le préfixe courant.
