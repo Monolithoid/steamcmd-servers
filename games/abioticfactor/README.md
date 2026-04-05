@@ -23,9 +23,8 @@ Installe d'abord les fichiers serveur dédiés sur l'hôte (SteamCMD ou autre m�
 
 ## Ce que fait l'image au démarrage
 
-1. Vérifie automatiquement le chemin de l’exécutable serveur.
-2. Si `SERVER_EXE` est incorrect, essaie des chemins connus.
-3. Lance le serveur via l’entrypoint Wine core (`/entrypoint.sh`).
+1. Lance le serveur via l’entrypoint Wine core (`/entrypoint.sh`).
+2. Utilise `SERVER_EXE` et `SERVER_ARGS` tels qu’ils sont définis.
 
 ## Variables utiles
 
