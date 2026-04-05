@@ -8,21 +8,4 @@ ENV WINEPREFIX=/home/steam/.wine-starrupture
 ENV SERVER_EXE="StarRuptureServerEOS.exe"
 ENV SERVER_ARGS="-Log -Port=7777 -RCWebControlDisable -RCWebInterfaceDisable"
 
-# DSSettings.txt automation
-ENV SR_WRITE_DSSETTINGS=1
-ENV SR_DSSETTINGS_PATH="/opt/server/DSSettings.txt"
-ENV SR_SESSION_NAME="StarRuptureServer"
-ENV SR_SAVE_GAME_INTERVAL="300"
-ENV SR_START_NEW_GAME="false"
-ENV SR_LOAD_SAVED_GAME="true"
-ENV SR_SAVE_GAME_NAME="AutoSave0.sav"
-
-# Optional password files
-ENV SR_ADMIN_PASSWORD_JSON=""
-ENV SR_PLAYER_PASSWORD_JSON=""
-
 WORKDIR /opt/server
-
-COPY --chmod=755 entrypoint.sh /starrupture-entrypoint.sh
-
-CMD ["/starrupture-entrypoint.sh"]
