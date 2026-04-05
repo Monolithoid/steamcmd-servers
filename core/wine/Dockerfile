@@ -2,18 +2,19 @@ FROM debian:12-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV SERVER_DIR=/opt/server \
-    WINEPREFIX=/home/steam/.wine
+    WINEPREFIX=/home/steam/.wine \
+    WINEARCH=win64
 
-RUN dpkg --add-architecture i386 && \
-    apt-get update && \
+RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       ca-certificates \
       wine \
-      wine32 \
       xvfb \
       winbind \
       tini \
     && rm -rf /var/lib/apt/lists/*
+
+RUN wine --version
 
 RUN mkdir -p "${SERVER_DIR}"
 

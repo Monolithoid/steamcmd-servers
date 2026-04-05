@@ -7,13 +7,10 @@ ENV STEAMCMD_DIR=/opt/steamcmd \
     STEAM_VALIDATE=0 \
     LD_LIBRARY_PATH=/opt/steamcmd/linux64
 
-RUN dpkg --add-architecture i386 && \
-    apt-get update && \
+RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       ca-certificates \
       curl \
-      lib32gcc-s1 \
-      lib32stdc++6 \
       tini \
     && rm -rf /var/lib/apt/lists/*
 
