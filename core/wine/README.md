@@ -8,6 +8,8 @@ Cette image **n’installe plus rien via SteamCMD**. Elle sert uniquement à :
 - lancer l’exécutable Windows via Wine ;
 - permettre un mode terminal de debug.
 
+Le runtime installe les composants `wine64` et `wine32` (multiarch `i386`) pour conserver `win64` par défaut tout en permettant l’exécution de binaires 32-bit via `WINEARCH=win32`.
+
 ## Variables d'environnement
 
 - `SERVER_DIR` (par défaut `/opt/server`) : dossier du serveur monté depuis l’hôte.
