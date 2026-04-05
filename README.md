@@ -14,6 +14,7 @@ This repo contains:
   - `monolithoid/rust-server`
   - `monolithoid/assetto-corsa-server`
   - `monolithoid/starrupture-server`
+  - `monolithoid/abioticfactor-server`
 
 ## Repository dependencies (Mermaid)
 
@@ -28,11 +29,13 @@ flowchart LR
         rust[rust-server]
         assetto[assetto-corsa-server]
         starrupture[starrupture-server]
+        abioticfactor[abioticfactor-server]
     end
 
     linux_core --> rust
     wine_core --> assetto
     wine_core --> starrupture
+    wine_core --> abioticfactor
 ```
 
 ## Volumes and network access
@@ -87,3 +90,8 @@ steamcmd \
   +app_update 3809400 validate \
   +quit
 ```
+
+
+### Abiotic Factor Dedicated Server
+
+This image is runtime-only on Wine core. Install/update server binaries manually on host, then mount them into `/opt/server`.
