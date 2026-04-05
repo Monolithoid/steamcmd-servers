@@ -59,6 +59,18 @@ En cas de besoin, tu peux :
 2. Ajuster la résolution/profondeur via `XVFB_SCREEN`.
 3. Désactiver explicitement (`USE_XVFB=0`) seulement si tu fournis déjà un `DISPLAY` fonctionnel.
 
+## Erreur `xvfb-run: error: xauth command not found`
+
+Si `xvfb-run` échoue avec ce message, il manque le binaire `xauth` dans l'image.
+Le Dockerfile du runtime Wine installe maintenant explicitement `xauth` avec `xvfb`.
+
+Si tu utilises une image déjà buildée, rebuild l'image avant de relancer :
+
+```bash
+docker compose build --no-cache
+docker compose up -d
+```
+
 ## Installer Microsoft Visual C++ Runtime via Winetricks
 
 Le runtime installe désormais **par défaut** Visual C++ 2022 via `WINETRICKS_PACKAGES=vcrun2022`.
