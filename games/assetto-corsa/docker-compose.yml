@@ -6,7 +6,7 @@ services:
     container_name: assetto-corsa
     restart: unless-stopped
     environment:
-      SERVER_EXE: acServer
+      SERVER_EXE: "acServer"
       SERVER_ARGS: ""
     volumes:
       - /opt/gaming/assetto-corsa:/opt/server
