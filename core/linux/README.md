@@ -1,46 +1,46 @@
 # SteamCMD Linux Base Image
 
-Image de base Linux prête à l'emploi pour déployer un serveur dédié avec SteamCMD. Elle installe SteamCMD, télécharge les fichiers serveur demandés, puis lance ta commande serveur.
+This image provides a ready-to-use Linux base to deploy a dedicated server with SteamCMD. It installs SteamCMD, downloads the requested server files, and then runs your server command.
 
-## Variables d'environnement
+## Environment variables
 
-- `STEAM_APP_ID` (requis) : identifiant Steam de l'application à installer.
-- `STEAM_LOGIN` (par défaut `anonymous`) et `STEAM_PASSWORD` : compte Steam pour récupérer l'app (nécessaire si l'accès anonyme n'est pas autorisé).
-- `STEAM_BRANCH` (par défaut `public`) : branche/beta à installer (`-beta` dans SteamCMD).
-- `STEAM_VALIDATE` (par défaut `0`) : mettre à `1` pour forcer la validation des fichiers.
-- `STEAMCMD_MAX_RETRIES` (par défaut `3`) : nombre maximum de tentatives lorsque SteamCMD retourne des erreurs transitoires (ex. `state is 0x6 after update job`).
-- `STEAMCMD_RETRY_DELAY` (par défaut `10`) : délai en secondes entre chaque tentative.
-- `STEAMCMD_FAILURE_MODE` (par défaut `ignore`) : comportement si SteamCMD échoue après toutes les tentatives. `ignore` continue le démarrage (mise à jour non bloquante), `keepalive` maintient le conteneur actif pour debug, `exit` arrête avec une erreur.
-- `SERVER_CMD` (par défaut `./server.sh`) : commande exécutée après l'installation.
-- `SERVER_DIR` (par défaut `/opt/server`) : chemin d'installation du serveur.
-- `STEAMCMD_DIR` (par défaut `/opt/steamcmd`) : emplacement de SteamCMD.
-- `LD_LIBRARY_PATH` (par défaut `/opt/steamcmd/linux64`) : inclut les bibliothèques Steam pour que les jeux puissent charger `steamclient.so` sans liens supplémentaires.
-- `ENABLE_TERMINAL` (par défaut `0`) : si `1`, lance la mise à jour SteamCMD puis ouvre un shell dans `SERVER_DIR` au lieu de démarrer le serveur (utile pour le debug via Coolify ou Docker). Si aucun TTY n'est disponible, le conteneur reste actif pour une connexion ultérieure (ex. `docker exec -it`). Mettre à `0` pour démarrer normalement le serveur après la mise à jour.
-- `START_SERVER` (par défaut `1`) : si `0`, effectue les étapes de mise à jour SteamCMD puis quitte sans lancer le serveur (utile pour les mises à jour seules).
-- `STEAMCMD` (par défaut `0`) : si `0`, ignore toutes les tentatives de mise à jour SteamCMD au démarrage. Utiliser `1` uniquement lors de fenêtres de maintenance manuelle contrôlées depuis l'hôte VPS.
+- `STEAM_APP_ID` (required): Steam application ID to install.
+- `STEAM_LOGIN` (default `anonymous`) and `STEAM_PASSWORD`: Steam account to retrieve the app (needed if anonymous access is not allowed).
+- `STEAM_BRANCH` (default `public`): branch/beta to install (`-beta` in SteamCMD).
+- `STEAM_VALIDATE` (default `0`): set to `1` to force file validation.
+- `STEAMCMD_MAX_RETRIES` (default `3`): maximum number of retry attempts when SteamCMD returns transient update errors (like `state is 0x6 after update job`).
+- `STEAMCMD_RETRY_DELAY` (default `10`): delay in seconds between retry attempts.
+- `STEAMCMD_FAILURE_MODE` (default `ignore`): behavior when SteamCMD still fails after all retries. `ignore` continues startup anyway (non-blocking update), `keepalive` keeps the container running for debugging, `exit` stops with error.
+- `SERVER_CMD` (default `./server.sh`): command executed after install.
+- `SERVER_DIR` (default `/opt/server`): server installation path.
+- `STEAMCMD_DIR` (default `/opt/steamcmd`): SteamCMD location.
+- `LD_LIBRARY_PATH` (default `/opt/steamcmd/linux64`): includes the Steam client libraries so games can load `steamclient.so` without extra links.
+- `ENABLE_TERMINAL` (default `0`): when `1`, run SteamCMD update then drop into a shell in `SERVER_DIR` instead of starting the server (useful for debugging via Coolify or Docker). If no TTY is available, the container stays alive so you can attach later (for example with `docker exec -it`). Set to `0` to start the server normally after the update.
+- `START_SERVER` (default `1`): when `0`, run the SteamCMD update steps then exit without launching the server (useful for update-only runs).
+- `STEAMCMD` (default `0`): when `0`, skip all SteamCMD update attempts at startup. Use `1` only during controlled manual maintenance windows from the VPS host.
 
-Après la fin de SteamCMD, l'entrypoint crée `/home/steam/.steam/sdk64/steamclient.so` comme lien symbolique vers le `steamclient.so` de SteamCMD (si présent), afin que les jeux attendant ce chemin puissent charger la bibliothèque sans configuration supplémentaire.
+After SteamCMD finishes, the entrypoint creates `/home/steam/.steam/sdk64/steamclient.so` as a symlink to the SteamCMD `steamclient.so` (if present), so games expecting that path can load the library without additional setup.
 
-## Fonctionnement de l'image
+## How the image prepares the server
 
-1. SteamCMD est téléchargé et extrait dans `STEAMCMD_DIR` (voir `Dockerfile`).
-2. Au démarrage, l'entrypoint construit une commande SteamCMD :
+1. SteamCMD is downloaded and extracted into `STEAMCMD_DIR` (see `Dockerfile`).
+2. On startup, the entrypoint builds a SteamCMD command:
    - `+login <STEAM_LOGIN> [STEAM_PASSWORD]`
    - `+force_install_dir <SERVER_DIR>`
    - `+app_update <STEAM_APP_ID> [-beta <STEAM_BRANCH>] [validate]`
    - `+quit`
-3. `steamcmd.sh` exécute cette séquence, téléchargeant ou mettant à jour les fichiers serveur dans `SERVER_DIR`.
-4. La commande serveur (`SERVER_CMD`) est ensuite lancée depuis `SERVER_DIR` via `bash -lc`, ce qui permet d'inclure des arguments entre guillemets dans une seule chaîne (ex. noms avec espaces).
+3. `steamcmd.sh` runs this sequence, downloading or updating server files in `SERVER_DIR`.
+4. The server command (`SERVER_CMD`) then runs from `SERVER_DIR` via `bash -lc`, so you can safely include quoted arguments in a single string (e.g., names with spaces).
 
-## Mise à jour manuelle recommandée (VPS)
+## Recommended manual update flow (VPS)
 
-L'accès Steam pouvant être instable (restrictions d'accès anonyme, Steam Guard, pannes transitoires), cette image **ne lance aucune mise à jour au démarrage par défaut**.
+Because Steam access can be unreliable (anonymous access restrictions, Steam Guard challenges, transient outages), this image now defaults to **no update on startup**.
 
-1. Garder `STEAMCMD=0` pour les conteneurs en production.
-2. Installer/mettre à jour les binaires manuellement depuis le VPS avant le premier lancement (et à chaque maintenance).
-3. Démarrer/redémarrer le conteneur uniquement une fois les binaires présents dans le `SERVER_DIR` monté.
+1. Keep `STEAMCMD=0` for normal runtime containers.
+2. Install/update binaries manually from the VPS before first launch (and for each maintenance update).
+3. Start/restart the runtime container only after binaries are present in the mounted `SERVER_DIR`.
 
-Exemple de commande d'installation/mise à jour manuelle depuis le VPS :
+Manual install/update command example from the VPS:
 
 ```bash
 docker run --rm -it \
@@ -53,9 +53,9 @@ docker run --rm -it \
   monolithoid/steamcmd-linux-core:latest
 ```
 
-Puis lance ton conteneur serveur habituel avec `STEAMCMD=0`.
+Then run your regular server container with `STEAMCMD=0`.
 
-## Exemple d'utilisation
+## Usage example
 
 ```bash
 docker run --rm \
@@ -65,15 +65,15 @@ docker run --rm \
   monolithoid/steamcmd-linux-core:latest
 ```
 
-Remplace `123456` par l'App ID Steam de ton serveur.
+Replace `123456` with your server's Steam App ID.
 
-- Monte un volume sur `/opt/server` pour persister les données et la configuration.
-- Remplace `SERVER_CMD` par le script fourni par ton jeu.
-- Assure-toi que le dossier monté sur l'hôte Coolify appartient à l'UID/GID `1000` (utilisateur `steam` par défaut dans le conteneur), par exemple : `sudo chown -R 1000:1000 /chemin/vers/tes/données`.
-- Ouvre et redirige les ports UDP/TCP requis sur ton pare-feu/routeur (et dans Coolify) pour que les joueurs puissent atteindre le serveur. Exemple sur Debian/Ubuntu avec UFW : `sudo ufw allow 2456:2458/udp` (adapter à ton jeu).
+- Mount a volume at `/opt/server` to persist data and configuration.
+- Replace `SERVER_CMD` with the script provided by your game.
+- Ensure the mounted folder on the Coolify host is owned by UID/GID `1000` (default `steam` user in the container), for example: `sudo chown -R 1000:1000 /path/to/your/data`.
+- Open and forward the required UDP/TCP ports on your firewall/router (and in Coolify) so players can reach the server. Example on Debian/Ubuntu with UFW: `sudo ufw allow 2456:2458/udp` (adapt to your game).
 
-## Personnalisation
+## Customization
 
-- Cibler une branche beta : `-e STEAM_BRANCH=experimental`.
-- Forcer la validation en cas de fichiers corrompus : `-e STEAM_VALIDATE=1`.
-- Ajouter ta propre configuration/scripts via un volume ou une image dérivée.
+- Target a beta branch: `-e STEAM_BRANCH=experimental`.
+- Force validation if you suspect corrupted files: `-e STEAM_VALIDATE=1`.
+- Add your own config/scripts via a volume or derived image.
