@@ -1,9 +1,9 @@
 # monolithoid/abioticfactor-server
 
-Serveur dédié Abiotic Factor basé sur Wine runtime.
-Les binaires sont installés **manuellement sur l’hébergement** (hors conteneur), puis montés dans `/opt/server`.
+Abiotic Factor dedicated server based on the Wine runtime.
+Server binaries are installed **manually on the host** (outside the container), then mounted into `/opt/server`.
 
-## Démarrage rapide
+## Quick start
 
 ```bash
 docker run -d \
@@ -16,32 +16,32 @@ docker run -d \
   monolithoid/abioticfactor-server:latest
 ```
 
-## Installation / mise à jour des fichiers serveur
+## Installing / updating server files
 
-L'image est **runtime-only** : elle ne télécharge rien au démarrage.
-Installe d'abord les fichiers serveur dédiés sur l'hôte (SteamCMD ou autre méthode officielle), puis monte ce dossier dans `/opt/server`.
+The image is **runtime-only**: it downloads nothing at startup.
+Install the dedicated server files on the host first (via SteamCMD or another official method), then mount that folder into `/opt/server`.
 
-## Ce que fait l'image au démarrage
+## What the image does at startup
 
-1. Lance le serveur via l’entrypoint Wine core (`/entrypoint.sh`).
-2. Utilise `SERVER_EXE` et `SERVER_ARGS` tels qu’ils sont définis.
+1. Launches the server via the Wine core entrypoint (`/entrypoint.sh`).
+2. Uses `SERVER_EXE` and `SERVER_ARGS` as defined.
 
-## Variables utiles
+## Useful variables
 
-- `SERVER_EXE` : chemin exécutable du serveur (par défaut `AbioticFactorServer.exe`).
-- `SERVER_ARGS` : arguments de lancement (par défaut `-log -port=7777 -queryport=27015`).
-- `WINEARCH` : architecture Wine (défaut image: `win64`).
-- `WINEPREFIX` : préfixe Wine (défaut image: `/home/steam/.wine-abioticfactor`).
-- `WINE_MISMATCH_STRATEGY` : `switch` (recommandé), `recreate` ou vide pour erreur.
-- `USE_XVFB` : `1` par défaut pour fournir un `DISPLAY` virtuel (évite l’erreur Wine `nodrv_CreateWindow` en environnement headless).
-- `XVFB_SCREEN` : écran virtuel Xvfb (défaut `0 1024x768x16`).
+- `SERVER_EXE`: server executable path (default `AbioticFactorServer.exe`).
+- `SERVER_ARGS`: launch arguments (default `-log -port=7777 -queryport=27015`).
+- `WINEARCH`: Wine architecture (image default: `win64`).
+- `WINEPREFIX`: Wine prefix (image default: `/home/steam/.wine-abioticfactor`).
+- `WINE_MISMATCH_STRATEGY`: `switch` (recommended), `recreate`, or leave unset to error.
+- `USE_XVFB`: `1` by default to provide a virtual `DISPLAY` (avoids the Wine `nodrv_CreateWindow` error in headless environments).
+- `XVFB_SCREEN`: Xvfb virtual screen (default `0 1024x768x16`).
 
-## Exemple docker-compose
+## docker-compose example
 
-Un exemple prêt à l’emploi est fourni dans `games/abioticfactor/docker-compose.yml`.
+A ready-to-use example is provided in `games/abioticfactor/docker-compose.yml`.
 
-## Notes importantes
+## Important notes
 
-- Ouvre et redirige les ports nécessaires dans le pare-feu/routeur/Coolify (exemple inclus: `7777/udp` et `27015/udp`).
-- Assure-toi que le dossier monté est possédé par l’UID/GID `1000` (`steam`) :
+- Open and forward the required ports on your firewall/router/Coolify (example included: `7777/udp` and `27015/udp`).
+- Make sure the mounted folder is owned by UID/GID `1000` (`steam`):
   `sudo chown -R 1000:1000 /path/to/your/data`

@@ -6,7 +6,7 @@ services:
     container_name: starrupture
     restart: unless-stopped
     environment:
-      # Démarrage recommandé par la documentation officielle
+      # Recommended startup arguments per the official documentation
       SERVER_EXE: "StarRuptureServerEOS.exe"
       SERVER_ARGS: "-Log -Port=7777 -RCWebControlDisable -RCWebInterfaceDisable"
     volumes:

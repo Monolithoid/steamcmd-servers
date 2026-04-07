@@ -1,6 +1,6 @@
 FROM monolithoid/steamcmd-wine-core:latest
 
-# StarRupture serveur binaire 64-bit, on force un préfixe Wine 64-bit dédié
+# StarRupture is a 64-bit binary, enforce a dedicated 64-bit Wine prefix
 ENV WINEARCH=win64
 ENV WINEPREFIX=/home/steam/.wine-starrupture
 

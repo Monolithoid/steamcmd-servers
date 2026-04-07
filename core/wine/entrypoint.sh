@@ -37,7 +37,7 @@ get_prefix_architecture() {
 }
 
 initialize_wine_prefix() {
-  echo "[wine-core] Initialisation du préfixe Wine : ${WINEPREFIX} (WINEARCH=${WINEARCH:-default})"
+  echo "[wine-core] Initializing Wine prefix: ${WINEPREFIX} (WINEARCH=${WINEARCH:-default})"
   wineboot -u >/dev/null 2>&1 || wineboot -u
 }
 
@@ -63,7 +63,7 @@ ensure_winetricks_packages() {
   fi
 
   if ! command -v winetricks >/dev/null 2>&1; then
-    echo "[wine-core] Erreur: WINETRICKS_PACKAGES est défini, mais winetricks est introuvable." >&2
+    echo "[wine-core] Error: WINETRICKS_PACKAGES is set but winetricks is not found." >&2
     return 1
   fi
 
@@ -76,12 +76,12 @@ ensure_winetricks_packages() {
 
   if [[ -f "${marker_file}" ]]; then
     if [[ "$(cat "${marker_file}")" == "${packages_to_install}" ]]; then
-      echo "[wine-core] Winetricks déjà appliqué pour les paquets demandés : ${packages_to_install}"
+      echo "[wine-core] Winetricks already applied for requested packages: ${packages_to_install}"
       return 0
     fi
   fi
 
-  echo "[wine-core] Installation des runtimes Winetricks : ${packages_to_install}"
+  echo "[wine-core] Installing Winetricks packages: ${packages_to_install}"
 
   if [[ "${USE_XVFB}" == "1" ]]; then
     xvfb-run -a -s "-screen ${XVFB_SCREEN}" winetricks ${quiet_flag} ${packages_to_install}
@@ -90,7 +90,7 @@ ensure_winetricks_packages() {
   fi
 
   if ! echo "${packages_to_install}" > "${marker_file}"; then
-    echo "[wine-core] Avertissement: impossible d'écrire le fichier marqueur ${marker_file}." >&2
+    echo "[wine-core] Warning: could not write marker file ${marker_file}." >&2
   fi
 }
 
@@ -117,28 +117,28 @@ ensure_wine_prefix_architecture() {
 
   if [[ "${WINE_MISMATCH_STRATEGY}" == "switch" ]]; then
     switched_prefix="${WINEPREFIX}-${expected_architecture}"
-    echo "[wine-core] Incompatibilité détectée (${prefix_architecture} vs ${expected_architecture})."
-    echo "[wine-core] Bascule automatique vers un préfixe dédié : ${switched_prefix}"
+    echo "[wine-core] Architecture mismatch detected (${prefix_architecture} vs ${expected_architecture})."
+    echo "[wine-core] Automatically switching to a dedicated prefix: ${switched_prefix}"
     export WINEPREFIX="${switched_prefix}"
     initialize_wine_prefix
     return 0
   fi
 
   if [[ "${WINE_MISMATCH_STRATEGY}" == "recreate" ]]; then
-    echo "[wine-core] Incompatibilité détectée (${prefix_architecture} vs ${expected_architecture})."
-    echo "[wine-core] Suppression et recréation du préfixe ${WINEPREFIX}."
+    echo "[wine-core] Architecture mismatch detected (${prefix_architecture} vs ${expected_architecture})."
+    echo "[wine-core] Deleting and recreating prefix ${WINEPREFIX}."
     rm -rf "${WINEPREFIX}"
     initialize_wine_prefix
     return 0
   fi
 
-  echo "[wine-core] Erreur: WINEARCH=${expected_architecture} mais ${WINEPREFIX} est ${prefix_architecture}." >&2
-  echo "[wine-core] Défini WINE_MISMATCH_STRATEGY=switch (recommandé) ou recreate pour auto-corriger." >&2
+  echo "[wine-core] Error: WINEARCH=${expected_architecture} but ${WINEPREFIX} is ${prefix_architecture}." >&2
+  echo "[wine-core] Set WINE_MISMATCH_STRATEGY=switch (recommended) or recreate to auto-fix." >&2
   return 1
 }
 
 open_terminal_mode() {
-  echo "[wine-core] Mode terminal actif. Ouverture d'un shell dans ${SERVER_DIR}."
+  echo "[wine-core] Terminal mode active. Opening a shell in ${SERVER_DIR}."
 
   cd "${SERVER_DIR}"
 
@@ -146,22 +146,22 @@ open_terminal_mode() {
     exec /bin/bash -l
   fi
 
-  echo "[wine-core] Aucun TTY détecté. Conteneur maintenu actif pour connexion ultérieure (docker exec -it)."
+  echo "[wine-core] No TTY detected. Keeping container alive for later attachment (docker exec -it)."
   exec tail -f /dev/null
 }
 
 start_windows_server() {
-  echo "[wine-core] Démarrage du serveur Windows via Wine : ${SERVER_EXE} ${SERVER_ARGS}"
+  echo "[wine-core] Starting Windows server via Wine: ${SERVER_EXE} ${SERVER_ARGS}"
 
   if [[ ! -f "${SERVER_DIR}/${SERVER_EXE}" ]]; then
-    echo "[wine-core] Erreur: ${SERVER_EXE} introuvable dans ${SERVER_DIR}." >&2
+    echo "[wine-core] Error: ${SERVER_EXE} not found in ${SERVER_DIR}." >&2
     exit 1
   fi
 
   cd "${SERVER_DIR}"
 
   if [[ "${USE_XVFB}" == "1" ]]; then
-    echo "[wine-core] USE_XVFB=1, lancement via xvfb-run (DISPLAY virtuel)."
+    echo "[wine-core] USE_XVFB=1, launching via xvfb-run (virtual DISPLAY)."
     exec xvfb-run -a -s "-screen ${XVFB_SCREEN}" wine "${SERVER_EXE}" ${SERVER_ARGS}
   fi
 
@@ -180,7 +180,7 @@ main() {
     start_windows_server
   fi
 
-  echo "[wine-core] START_SERVER=0, aucun serveur lancé."
+  echo "[wine-core] START_SERVER=0, no server launched."
 }
 
 main "$@"

@@ -9,12 +9,12 @@ services:
       STEAM_APP_ID: "000000"
       SERVER_CMD: "./server.sh"
 
-      # Mettre à 0 pour désactiver toute tentative de mise à jour SteamCMD au démarrage.
+      # Set to 0 to disable all SteamCMD update attempts at startup.
       STEAMCMD: "1"
 
-      # Optionnel: utile pour les apps qui refusent login anonymous
-      # STEAM_LOGIN: "mon_compte_steam"
-      # STEAM_PASSWORD: "mon_mot_de_passe_steam"
+      # Optional: needed for apps that require a non-anonymous login
+      # STEAM_LOGIN: "my_steam_account"
+      # STEAM_PASSWORD: "my_steam_password"
       # STEAM_BRANCH: "public"
       # STEAM_VALIDATE: "0"
     volumes:
