@@ -1,7 +1,7 @@
 # monolithoid/assetto-corsa-server
 
-Dedicated Assetto Corsa server basé sur Wine runtime.
-Les fichiers serveur sont installés **manuellement sur l’hébergement** puis montés dans `/opt/server`.
+Dedicated Assetto Corsa server based on the Wine runtime.
+Server files are installed **manually on the host** and then mounted into `/opt/server`.
 
 ## Quick start
 

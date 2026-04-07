@@ -1,9 +1,9 @@
 # monolithoid/starrupture-server
 
-Serveur dédié StarRupture basé sur le runtime Wine core.
-Les binaires sont installés **manuellement sur l’hébergement** (hors conteneur), puis montés dans `/opt/server`.
+StarRupture dedicated server based on the Wine core runtime.
+Server binaries are installed **manually on the host** (outside the container), then mounted into `/opt/server`.
 
-## Démarrage rapide
+## Quick start
 
 ```bash
 docker run -d \
@@ -15,9 +15,9 @@ docker run -d \
   monolithoid/starrupture-server:latest
 ```
 
-## Commande SteamCMD manuelle (obligatoire)
+## Manual SteamCMD install (required)
 
-Exécuter cette commande sur l’hôte pour installer/mettre à jour StarRupture dans le dossier monté par le conteneur :
+Run this command on the host to install or update StarRupture into the folder mounted by the container:
 
 ```bash
 steamcmd \
@@ -28,14 +28,14 @@ steamcmd \
   +quit
 ```
 
-## Exemple `DSSettings.txt` (à placer côté serveur)
+## `DSSettings.txt` example (place on the server side)
 
-Crée le fichier dans ton volume serveur, par exemple :
+Create the file in your server volume, for example:
 
-- sur l’hôte : `/opt/gaming/starrupture/DSSettings.txt`
-- dans le conteneur : `/opt/server/DSSettings.txt`
+- on the host: `/opt/gaming/starrupture/DSSettings.txt`
+- in the container: `/opt/server/DSSettings.txt`
 
-Exemple minimal :
+Minimal example:
 
 ```json
 {
@@ -47,25 +47,25 @@ Exemple minimal :
 }
 ```
 
-## Variables de configuration
+## Configuration variables
 
-- `SERVER_EXE` : exécutable du serveur (par défaut `StarRuptureServerEOS.exe`).
-- `SERVER_ARGS` : arguments de lancement (par défaut `-Log -Port=7777 -RCWebControlDisable -RCWebInterfaceDisable`).
-- `WINEARCH` : fixé à `win64` dans l’image.
-- `WINEPREFIX` : préfixe Wine dédié (`/home/steam/.wine-starrupture`).
-- `WINE_MISMATCH_STRATEGY` : hérité du runtime wine core (`switch` par défaut).
+- `SERVER_EXE`: server executable (default `StarRuptureServerEOS.exe`).
+- `SERVER_ARGS`: launch arguments (default `-Log -Port=7777 -RCWebControlDisable -RCWebInterfaceDisable`).
+- `WINEARCH`: fixed to `win64` in the image.
+- `WINEPREFIX`: dedicated Wine prefix (`/home/steam/.wine-starrupture`).
+- `WINE_MISMATCH_STRATEGY`: inherited from the Wine core runtime (`switch` by default).
 
-Si `SERVER_EXE` est incorrect, le conteneur échouera au démarrage. Vérifie le chemin de l’exécutable dans ton volume monté (`/opt/server`).
+If `SERVER_EXE` is incorrect, the container will fail at startup. Check the executable path in your mounted volume (`/opt/server`).
 
-## Exemple `docker-compose.yml`
+## `docker-compose.yml` example
 
-Un exemple prêt à l'emploi est fourni dans `games/starrupture/docker-compose.yml`.
+A ready-to-use example is provided in `games/starrupture/docker-compose.yml`.
 
-## Notes importantes (réseau et sécurité)
+## Important notes (network and security)
 
-- Ce jeu nécessite une connexion client vers l'IP WAN publique du serveur.
-- La redirection de port est obligatoire (exemple inclus : UDP `7777`).
-- Vérifie la publication de sécurité indiquée sur la page officielle de configuration.
-- Assure-toi que le dossier monté depuis Coolify est possédé par l'UID/GID `1000` (`steam`) :
+- This game requires clients to connect to the server's public WAN IP.
+- Port forwarding is mandatory (example included: UDP `7777`).
+- Check the security advisory on the official configuration page.
+- Make sure the folder mounted from Coolify is owned by UID/GID `1000` (`steam`):
   `sudo chown -R 1000:1000 /path/to/your/data`
-- Si tu obtiens `WINEARCH set to win64 but '/home/steam/.wine-starrupture' is a 32-bit installation`, ajoute `WINE_MISMATCH_STRATEGY=switch` pour laisser le conteneur basculer automatiquement vers un préfixe compatible **sans suppression**.
+- If you get `WINEARCH set to win64 but '/home/steam/.wine-starrupture' is a 32-bit installation`, add `WINE_MISMATCH_STRATEGY=switch` to let the container automatically switch to a compatible prefix **without deleting anything**.

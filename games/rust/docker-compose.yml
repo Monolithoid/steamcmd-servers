@@ -12,11 +12,11 @@ services:
       ENABLE_TERMINAL: 0
       START_SERVER: 1
       STEAMCMD: 0
-      # Optionnel: si l'app Steam nécessite un compte non-anonyme
-      # STEAM_LOGIN: "mon_compte_steam"
-      # STEAM_PASSWORD: "mon_mot_de_passe_steam"
+      # Optional: needed if the Steam app requires a non-anonymous login
+      # STEAM_LOGIN: "my_steam_account"
+      # STEAM_PASSWORD: "my_steam_password"
 
-      # Exemple de surcharge :
+      # Example override:
       # SERVER_CMD: >
       #   ./RustDedicated -batchmode -nographics
       #   +server.port 28015
@@ -29,7 +29,7 @@ services:
       #   +server.worldsize 3500
       #   +server.maxplayers 4
       #   +server.hostname "Monolithoid Rust"
-      #   +server.description "Serveur Rust basé sur SteamCMD"
+      #   +server.description "Rust server powered by SteamCMD"
       #   +server.identity "rust-server"
       #   +server.saveinterval 600
     volumes:

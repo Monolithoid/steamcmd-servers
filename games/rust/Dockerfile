@@ -3,7 +3,7 @@ FROM monolithoid/steamcmd-linux-core:latest
 # Rust Dedicated Server AppID
 ENV STEAM_APP_ID=258550
 
-# Commande par défaut (surchargable via SERVER_CMD)
+# Default command (can be overridden via SERVER_CMD)
 ENV SERVER_CMD="\
 ./RustDedicated -batchmode -nographics \
   +server.port 28015 \
@@ -16,7 +16,7 @@ ENV SERVER_CMD="\
   +server.worldsize 3500 \
   +server.maxplayers 4 \
   +server.hostname \"Monolithoid Rust\" \
-  +server.description \"Serveur Rust basé sur SteamCMD\" \
+  +server.description \"Rust server powered by SteamCMD\" \
   +server.identity \"rust-server\" \
   +server.saveinterval 600"
 

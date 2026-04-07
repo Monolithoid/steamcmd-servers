@@ -4,7 +4,7 @@ FROM monolithoid/steamcmd-wine-core:latest
 ENV WINEARCH=win64
 ENV WINEPREFIX=/home/steam/.wine-abioticfactor
 
-# Valeurs par défaut (surchargables)
+# Default values (can be overridden)
 ENV SERVER_EXE="AbioticFactorServer.exe"
 ENV SERVER_ARGS="-log -port=7777 -queryport=27015"
 

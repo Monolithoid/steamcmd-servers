@@ -36,7 +36,7 @@ RUN chmod +x /entrypoint.sh
 USER steam
 WORKDIR "${SERVER_DIR}"
 
-# Pré-initialisation du préfixe Wine (non bloquant)
+# Pre-initialize Wine prefix (non-blocking)
 RUN winecfg || true
 
 ENTRYPOINT ["/usr/bin/tini", "--"]

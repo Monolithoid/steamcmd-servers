@@ -1,82 +1,82 @@
 # Wine Core Runtime
 
-Image de base minimale pour exécuter un serveur Windows déjà installé sur l’hôte.
+Minimal base image for running a Windows server already installed on the host.
 
-Cette image **n’installe plus rien via SteamCMD**. Elle sert uniquement à :
+This image **no longer installs anything via SteamCMD**. Its sole purpose is to:
 
-- monter le dossier serveur existant dans `/opt/server` ;
-- lancer l’exécutable Windows via Wine ;
-- permettre un mode terminal de debug.
+- mount the existing server folder at `/opt/server`;
+- launch the Windows executable via Wine;
+- provide a debug terminal mode.
 
-Le runtime installe les composants `wine64` et `wine32` (multiarch `i386`) pour conserver `win64` par défaut tout en permettant l’exécution de binaires 32-bit via `WINEARCH=win32`.
-Il inclut aussi `winetricks`, utile pour installer des dépendances Windows comme les runtimes Microsoft Visual C++.
+The runtime installs `wine64` and `wine32` (multiarch `i386`) to keep `win64` as the default while still allowing 32-bit binaries to run via `WINEARCH=win32`.
+It also includes `winetricks`, useful for installing Windows dependencies such as Microsoft Visual C++ runtimes.
 
-## Variables d'environnement
+## Environment variables
 
-- `SERVER_DIR` (par défaut `/opt/server`) : dossier du serveur monté depuis l’hôte.
-- `SERVER_EXE` (par défaut `Server.exe`) : exécutable Windows à lancer.
-- `SERVER_ARGS` (par défaut vide) : arguments de lancement.
-- `WINEPREFIX` (par défaut `/home/steam/.wine`) : préfixe Wine.
-- `WINEARCH` (par défaut `win64`) : architecture demandée pour le préfixe (`win64` ou `win32`).
-- `WINE_MISMATCH_STRATEGY` (par défaut `switch`) : stratégie si l’architecture du préfixe existant ne correspond pas à `WINEARCH`.
-  - `switch` : **recommandé**, ne supprime rien et bascule vers un nouveau préfixe `${WINEPREFIX}-${WINEARCH}`.
-  - `recreate` : supprime/recrée le préfixe courant.
-  - `error` : échoue avec un message explicite.
-- `USE_XVFB` (par défaut `1`) : démarre Wine avec `xvfb-run` pour fournir un `DISPLAY` virtuel en environnement headless.
-- `XVFB_SCREEN` (par défaut `0 1024x768x16`) : valeur passée à `xvfb-run -s "-screen ..."` pour régler l’écran virtuel.
-- `WINETRICKS_PACKAGES` (par défaut `vcrun2022`) : liste de paquets `winetricks` à installer dans le préfixe (séparateur espace ou virgule). Exemples : `vcrun2019`, `vcrun2022`, `dotnet48`.
-- `WINETRICKS_QUIET` (par défaut `1`) : passe `-q` à `winetricks` pour réduire l’interaction (`0` pour mode verbeux).
-- `ENABLE_TERMINAL` (par défaut `0`) : si `1`, ouvre un shell dans `SERVER_DIR`.
-- `START_SERVER` (par défaut `1`) : si `0`, n’exécute pas le serveur.
+- `SERVER_DIR` (default `/opt/server`): server folder mounted from the host.
+- `SERVER_EXE` (default `Server.exe`): Windows executable to launch.
+- `SERVER_ARGS` (default empty): launch arguments.
+- `WINEPREFIX` (default `/home/steam/.wine`): Wine prefix path.
+- `WINEARCH` (default `win64`): requested architecture for the prefix (`win64` or `win32`).
+- `WINE_MISMATCH_STRATEGY` (default `switch`): strategy when the existing prefix architecture does not match `WINEARCH`.
+  - `switch`: **recommended**, keeps the existing prefix untouched and switches to a new `${WINEPREFIX}-${WINEARCH}` prefix.
+  - `recreate`: deletes and recreates the current prefix.
+  - `error`: fails with an explicit error message.
+- `USE_XVFB` (default `1`): starts Wine with `xvfb-run` to provide a virtual `DISPLAY` in headless environments.
+- `XVFB_SCREEN` (default `0 1024x768x16`): value passed to `xvfb-run -s "-screen ..."` to configure the virtual screen.
+- `WINETRICKS_PACKAGES` (default `vcrun2022`): list of `winetricks` packages to install into the prefix (space or comma separated). Examples: `vcrun2019`, `vcrun2022`, `dotnet48`.
+- `WINETRICKS_QUIET` (default `1`): passes `-q` to `winetricks` to reduce interaction (`0` for verbose mode).
+- `ENABLE_TERMINAL` (default `0`): when `1`, opens a shell in `SERVER_DIR`.
+- `START_SERVER` (default `1`): when `0`, does not launch the server.
 
-## Erreur d’architecture de préfixe Wine
+## Wine prefix architecture error
 
-Si tu vois une erreur du type :
+If you see an error like:
 
 `wine: WINEARCH set to win64 but '<prefix>' is a 32-bit installation.`
 
-cela signifie que le dossier `WINEPREFIX` existant a été créé en `win32`.
+it means the existing `WINEPREFIX` folder was created as `win32`.
 
-Solutions :
+Solutions:
 
-1. Utiliser `WINE_MISMATCH_STRATEGY=switch` pour basculer automatiquement sur un préfixe compatible, sans suppression.
-2. Ou `WINE_MISMATCH_STRATEGY=recreate` pour forcer une recréation.
-3. Ou corriger manuellement le préfixe puis redémarrer.
+1. Use `WINE_MISMATCH_STRATEGY=switch` to automatically switch to a compatible prefix without deleting anything.
+2. Or use `WINE_MISMATCH_STRATEGY=recreate` to force a recreation.
+3. Or fix the prefix manually and restart.
 
-## Erreur `nodrv_CreateWindow` / `$DISPLAY`
+## `nodrv_CreateWindow` / `$DISPLAY` error
 
-Si tu vois :
+If you see:
 
 `Application tried to create a window, but no driver could be loaded`  
 `Make sure that your X server is running and that $DISPLAY is set correctly`
 
-alors Wine essaie d’ouvrir un contexte graphique sans serveur X disponible.
+Wine is trying to open a graphical context without an available X server.
 
-Le runtime active désormais `xvfb-run` par défaut (`USE_XVFB=1`) pour créer un affichage virtuel.
-En cas de besoin, tu peux :
+The runtime now enables `xvfb-run` by default (`USE_XVFB=1`) to create a virtual display.
+If needed, you can:
 
-1. Laisser `USE_XVFB=1` (recommandé en conteneur/headless).
-2. Ajuster la résolution/profondeur via `XVFB_SCREEN`.
-3. Désactiver explicitement (`USE_XVFB=0`) seulement si tu fournis déjà un `DISPLAY` fonctionnel.
+1. Keep `USE_XVFB=1` (recommended in container/headless environments).
+2. Adjust the resolution/depth via `XVFB_SCREEN`.
+3. Explicitly disable it (`USE_XVFB=0`) only if you already provide a working `DISPLAY`.
 
-## Erreur `xvfb-run: error: xauth command not found`
+## `xvfb-run: error: xauth command not found`
 
-Si `xvfb-run` échoue avec ce message, il manque le binaire `xauth` dans l'image.
-Le Dockerfile du runtime Wine installe maintenant explicitement `xauth` avec `xvfb`.
+If `xvfb-run` fails with this message, the `xauth` binary is missing from the image.
+The Wine runtime Dockerfile now explicitly installs `xauth` alongside `xvfb`.
 
-Si tu utilises une image déjà buildée, rebuild l'image avant de relancer :
+If you are using an already-built image, rebuild it before restarting:
 
 ```bash
 docker compose build --no-cache
 docker compose up -d
 ```
 
-## Installer Microsoft Visual C++ Runtime via Winetricks
+## Installing Microsoft Visual C++ Runtime via Winetricks
 
-Le runtime installe désormais **par défaut** Visual C++ 2022 via `WINETRICKS_PACKAGES=vcrun2022`.
-Tu peux surcharger la variable pour installer d’autres dépendances, ou la vider pour désactiver complètement Winetricks.
+The runtime now installs **Visual C++ 2022 by default** via `WINETRICKS_PACKAGES=vcrun2022`.
+You can override the variable to install other dependencies, or clear it to disable Winetricks entirely.
 
-Exemple (Visual C++ 2022 explicite) :
+Example (explicit Visual C++ 2022):
 
 ```bash
 docker run --rm \
@@ -86,19 +86,19 @@ docker run --rm \
   monolithoid/steamcmd-wine-core:latest
 ```
 
-Tu peux aussi chaîner plusieurs dépendances, par exemple :
+You can also chain multiple dependencies, for example:
 
 ```bash
 -e WINETRICKS_PACKAGES="vcrun2019,dotnet48"
 ```
 
-Pour désactiver l’installation Winetricks :
+To disable Winetricks installation:
 
 ```bash
 -e WINETRICKS_PACKAGES=""
 ```
 
-## Exemple de lancement
+## Usage example
 
 ```bash
 docker run --rm \
@@ -109,9 +109,9 @@ docker run --rm \
   monolithoid/steamcmd-wine-core:latest
 ```
 
-## Préparation manuelle SteamCMD (sur l’hôte)
+## Manual SteamCMD setup (on the host)
 
-Cette commande est à exécuter **directement sur la machine d’hébergement** (hors conteneur runtime) pour installer ou mettre à jour les fichiers Windows :
+Run this command **directly on the host machine** (outside the runtime container) to install or update the Windows server files:
 
 ```bash
 steamcmd \
@@ -122,8 +122,8 @@ steamcmd \
   +quit
 ```
 
-Notes :
+Notes:
 
-- Utilise `+login anonymous` si le serveur le permet.
-- Remplace `<app_id>` par l’AppID du serveur dédié.
-- Donne les droits UID/GID `1000:1000` sur le dossier monté si nécessaire.
+- Use `+login anonymous` if the server allows it.
+- Replace `<app_id>` with the dedicated server AppID.
+- Set UID/GID `1000:1000` ownership on the mounted folder if needed.

@@ -2,7 +2,7 @@
 
 This image provides a ready-to-use Linux base to deploy a dedicated server with SteamCMD. It installs SteamCMD, downloads the requested server files, and then runs your server command.
 
-## Key environment variables
+## Environment variables
 
 - `STEAM_APP_ID` (required): Steam application ID to install.
 - `STEAM_LOGIN` (default `anonymous`) and `STEAM_PASSWORD`: Steam account to retrieve the app (needed if anonymous access is not allowed).
@@ -18,8 +18,6 @@ This image provides a ready-to-use Linux base to deploy a dedicated server with 
 - `ENABLE_TERMINAL` (default `0`): when `1`, run SteamCMD update then drop into a shell in `SERVER_DIR` instead of starting the server (useful for debugging via Coolify or Docker). If no TTY is available, the container stays alive so you can attach later (for example with `docker exec -it`). Set to `0` to start the server normally after the update.
 - `START_SERVER` (default `1`): when `0`, run the SteamCMD update steps then exit without launching the server (useful for update-only runs).
 - `STEAMCMD` (default `0`): when `0`, skip all SteamCMD update attempts at startup. Use `1` only during controlled manual maintenance windows from the VPS host.
-
-The entrypoint also creates `/home/steam/.steam/sdk64/steamclient.so` as a symlink to the SteamCMD `steamclient.so`, so games expecting that path can load the library without additional setup.
 
 After SteamCMD finishes, the entrypoint creates `/home/steam/.steam/sdk64/steamclient.so` as a symlink to the SteamCMD `steamclient.so` (if present), so games expecting that path can load the library without additional setup.
 
@@ -61,11 +59,13 @@ Then run your regular server container with `STEAMCMD=0`.
 
 ```bash
 docker run --rm \
-  -e STEAM_APP_ID=123456 \ # replace with your server app id
+  -e STEAM_APP_ID=123456 \
   -e SERVER_CMD="./start-server.sh" \
   -p 2456-2458:2456-2458/udp \
   monolithoid/steamcmd-linux-core:latest
 ```
+
+Replace `123456` with your server's Steam App ID.
 
 - Mount a volume at `/opt/server` to persist data and configuration.
 - Replace `SERVER_CMD` with the script provided by your game.
