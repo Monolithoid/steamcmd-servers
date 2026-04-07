@@ -11,6 +11,6 @@ services:
       START_SERVER: "1"
       ENABLE_TERMINAL: "0"
     volumes:
-      - ./data:/opt/server
+      - /opt/gaming/steamcmd-wine-core:/opt/server
     ports:
       - "7777:7777/udp"

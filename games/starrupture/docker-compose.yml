@@ -10,6 +10,6 @@ services:
       SERVER_EXE: "StarRuptureServerEOS.exe"
       SERVER_ARGS: "-Log -Port=7777 -RCWebControlDisable -RCWebInterfaceDisable"
     volumes:
-      - ./data:/opt/server
+      - /opt/gaming/starrupture:/opt/server
     ports:
       - "7777:7777/udp"
