@@ -89,7 +89,9 @@ ensure_winetricks_packages() {
     winetricks ${quiet_flag} ${packages_to_install}
   fi
 
-  echo "${packages_to_install}" > "${marker_file}"
+  if ! echo "${packages_to_install}" > "${marker_file}"; then
+    echo "[wine-core] Avertissement: impossible d'écrire le fichier marqueur ${marker_file}." >&2
+  fi
 }
 
 ensure_wine_prefix_architecture() {
@@ -150,6 +152,12 @@ open_terminal_mode() {
 
 start_windows_server() {
   echo "[wine-core] Démarrage du serveur Windows via Wine : ${SERVER_EXE} ${SERVER_ARGS}"
+
+  if [[ ! -f "${SERVER_DIR}/${SERVER_EXE}" ]]; then
+    echo "[wine-core] Erreur: ${SERVER_EXE} introuvable dans ${SERVER_DIR}." >&2
+    exit 1
+  fi
+
   cd "${SERVER_DIR}"
 
   if [[ "${USE_XVFB}" == "1" ]]; then
