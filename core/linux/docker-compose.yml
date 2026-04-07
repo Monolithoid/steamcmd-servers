@@ -18,6 +18,6 @@ services:
       # STEAM_BRANCH: "public"
       # STEAM_VALIDATE: "0"
     volumes:
-      - ./data:/opt/server
+      - /opt/gaming/steamcmd-linux-core:/opt/server
     ports:
       - "27015:27015/udp"

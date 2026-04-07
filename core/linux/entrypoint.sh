@@ -33,19 +33,18 @@ ensure_steamclient_symlink() {
   ln -sf "${steam_client_source}" "${steam_client_target}"
 }
 
-update_args="+force_install_dir ${SERVER_DIR}"
-update_args+=" +login ${STEAM_LOGIN}"
+update_args=("+force_install_dir" "${SERVER_DIR}" "+login" "${STEAM_LOGIN}")
 if [[ -n "${STEAM_PASSWORD}" && "${STEAM_LOGIN}" != "anonymous" ]]; then
-  update_args+=" ${STEAM_PASSWORD}"
+  update_args+=("${STEAM_PASSWORD}")
 fi
-update_args+=" +app_update ${STEAM_APP_ID}"
+update_args+=("+app_update" "${STEAM_APP_ID}")
 if [[ -n "${STEAM_BRANCH}" && "${STEAM_BRANCH}" != "public" ]]; then
-  update_args+=" -beta ${STEAM_BRANCH}"
+  update_args+=("-beta" "${STEAM_BRANCH}")
 fi
 if [[ "${STEAM_VALIDATE}" == "1" ]]; then
-  update_args+=" validate"
+  update_args+=("validate")
 fi
-update_args+=" +quit"
+update_args+=("+quit")
 
 run_steamcmd_update() {
   local attempt=1
@@ -56,7 +55,7 @@ run_steamcmd_update() {
 
     echo "[steamcmd-linux-core] Updating app ${STEAM_APP_ID} (attempt ${attempt}/${STEAMCMD_MAX_RETRIES})..."
 
-    if "${STEAMCMD_DIR}/steamcmd.sh" ${update_args} 2>&1 | tee "${output_file}"; then
+    if "${STEAMCMD_DIR}/steamcmd.sh" "${update_args[@]}" 2>&1 | tee "${output_file}"; then
       rm -f "${output_file}"
       return 0
     fi
