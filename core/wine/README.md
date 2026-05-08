@@ -26,6 +26,7 @@ It also includes `winetricks`, useful for installing Windows dependencies such a
 - `XVFB_SCREEN` (default `0 1024x768x16`): value passed to `xvfb-run -s "-screen ..."` to configure the virtual screen.
 - `WINETRICKS_PACKAGES` (default `vcrun2022`): list of `winetricks` packages to install into the prefix (space or comma separated). Examples: `vcrun2019`, `vcrun2022`, `dotnet48`.
 - `WINETRICKS_QUIET` (default `1`): passes `-q` to `winetricks` to reduce interaction (`0` for verbose mode).
+- `WINETRICKS_FORCE` (default `1`): passes `--force` to `winetricks` to bypass checksum drift when upstream redistributables are reissued (common with `vcrun2022`). Set to `0` to keep strict checksum validation.
 - `ENABLE_TERMINAL` (default `0`): when `1`, opens a shell in `SERVER_DIR`.
 - `START_SERVER` (default `1`): when `0`, does not launch the server.
 
@@ -70,6 +71,19 @@ If you are using an already-built image, rebuild it before restarting:
 docker compose build --no-cache
 docker compose up -d
 ```
+
+## `SHA256 mismatch` with Winetricks packages
+
+Microsoft sometimes republishes Visual C++ redistributables at the same URL with a new checksum. In unattended container runs, Winetricks may abort after reporting `SHA256 mismatch`.
+
+The runtime now enables `WINETRICKS_FORCE=1` by default so Winetricks can continue non-interactively in this scenario.
+
+If you prefer strict checksum enforcement, set:
+
+```bash
+-e WINETRICKS_FORCE=0
+```
+
 
 ## Installing Microsoft Visual C++ Runtime via Winetricks
 
