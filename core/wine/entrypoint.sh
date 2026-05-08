@@ -11,6 +11,7 @@ set -euo pipefail
 : "${XVFB_SCREEN:=0 1024x768x16}"
 : "${WINETRICKS_PACKAGES:=vcrun2022}"
 : "${WINETRICKS_QUIET:=1}"
+: "${WINETRICKS_FORCE:=1}"
 
 get_prefix_architecture() {
   local prefix_path="$1"
@@ -55,6 +56,7 @@ ensure_winetricks_packages() {
   local packages_to_install=""
   local marker_file=""
   local quiet_flag=""
+  local force_flag=""
 
   packages_to_install="$(normalize_winetricks_packages "${WINETRICKS_PACKAGES}")"
 
@@ -74,6 +76,10 @@ ensure_winetricks_packages() {
     quiet_flag="-q"
   fi
 
+  if [[ "${WINETRICKS_FORCE}" == "1" ]]; then
+    force_flag="--force"
+  fi
+
   if [[ -f "${marker_file}" ]]; then
     if [[ "$(cat "${marker_file}")" == "${packages_to_install}" ]]; then
       echo "[wine-core] Winetricks already applied for requested packages: ${packages_to_install}"
@@ -84,9 +90,9 @@ ensure_winetricks_packages() {
   echo "[wine-core] Installing Winetricks packages: ${packages_to_install}"
 
   if [[ "${USE_XVFB}" == "1" ]]; then
-    xvfb-run -a -s "-screen ${XVFB_SCREEN}" winetricks ${quiet_flag} ${packages_to_install}
+    xvfb-run -a -s "-screen ${XVFB_SCREEN}" winetricks ${quiet_flag} ${force_flag} ${packages_to_install}
   else
-    winetricks ${quiet_flag} ${packages_to_install}
+    winetricks ${quiet_flag} ${force_flag} ${packages_to_install}
   fi
 
   if ! echo "${packages_to_install}" > "${marker_file}"; then

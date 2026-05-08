@@ -35,6 +35,7 @@ Install the dedicated server files on the host first (via SteamCMD or another of
 - `WINE_MISMATCH_STRATEGY`: `switch` (recommended), `recreate`, or leave unset to error.
 - `USE_XVFB`: `1` by default to provide a virtual `DISPLAY` (avoids the Wine `nodrv_CreateWindow` error in headless environments).
 - `XVFB_SCREEN`: Xvfb virtual screen (default `0 1024x768x16`).
+- `WINETRICKS_FORCE`: `1` by default to let Winetricks continue if Microsoft republishes VC++ installers with a new checksum; set `0` for strict checks.
 
 ## docker-compose example
 
