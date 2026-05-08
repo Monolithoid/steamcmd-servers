@@ -39,6 +39,12 @@ get_prefix_architecture() {
 
 initialize_wine_prefix() {
   echo "[wine-core] Initializing Wine prefix: ${WINEPREFIX} (WINEARCH=${WINEARCH:-default})"
+
+  if [[ "${USE_XVFB}" == "1" ]]; then
+    xvfb-run -a -s "-screen ${XVFB_SCREEN}" wineboot -u >/dev/null 2>&1 ||       xvfb-run -a -s "-screen ${XVFB_SCREEN}" wineboot -u
+    return 0
+  fi
+
   wineboot -u >/dev/null 2>&1 || wineboot -u
 }
 
