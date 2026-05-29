@@ -144,7 +144,8 @@ CONFIG_VARIABLES=(
   STEAMCMD_BIN
   LOG_DIR
   PC_STEAM_APPS_DIR
-  VPS_SSH_TARGET
+  VPS_LOGIN
+  VPS_URL
   VPS_SSH_PORT
   VPS_BASE_DIR
   VPS_OWNER
@@ -173,9 +174,11 @@ remember_configured_values "${CONFIG_VARIABLES[@]}"
 
 STEAMCMD_BIN="${STEAMCMD_BIN:-steamcmd}"
 LOG_DIR="${LOG_DIR:-${HOME}/steamcmd-servers/logs}"
-PC_STEAM_APPS_DIR="${PC_STEAM_APPS_DIR:-${VPS_BASE_DIR:-/opt/gaming}}"
+PC_STEAM_APPS_DIR="${PC_STEAM_APPS_DIR:-/opt/gaming}"
 
-VPS_SSH_TARGET="${VPS_SSH_TARGET:-}"
+VPS_LOGIN="${VPS_LOGIN:-}"
+VPS_URL="${VPS_URL:-}"
+VPS_SSH_TARGET=""
 VPS_SSH_PORT="${VPS_SSH_PORT:-22}"
 VPS_BASE_DIR="${VPS_BASE_DIR:-/opt/gaming}"
 VPS_OWNER="${VPS_OWNER:-1000:1000}"
@@ -198,33 +201,16 @@ ASSETTO_CORSA_REMOTE_DIR="${ASSETTO_CORSA_REMOTE_DIR:-${VPS_BASE_DIR}/assetto-co
 SUBNAUTICA_REMOTE_DIR="${SUBNAUTICA_REMOTE_DIR:-${VPS_BASE_DIR}/subnautica}"
 
 PROMPT_CACHE_VARIABLES=(
-  STEAMCMD_BIN
-  LOG_DIR
   STEAM_LOGIN
-  VPS_SSH_TARGET
-  VPS_SSH_PORT
-  VPS_BASE_DIR
-  VPS_OWNER
-  VPS_SUDO
-  VPS_RSYNC_PATH
-  PC_STEAM_APPS_DIR
-  PC_RSYNC_DELETE
-  PC_RSYNC_COMPRESS
-  PC_RSYNC_EXTRA_ARGS
-  PC_REMEMBER_PROMPT_VALUES
-  ASSETTO_CORSA_ENABLED
-  SUBNAUTICA_ENABLED
-  ASSETTO_CORSA_LOCAL_DIR
-  SUBNAUTICA_LOCAL_DIR
-  ASSETTO_CORSA_REMOTE_DIR
-  SUBNAUTICA_REMOTE_DIR
+  VPS_LOGIN
+  VPS_URL
 )
 
 load_prompt_cache_file() {
   local cache_file="$1"
   local variable_name=""
-  local value_name=""
-  local flag_name=""
+  local raw_value=""
+  local line=""
 
   if [[ ! -f "${cache_file}" ]]; then
     return 0
@@ -232,35 +218,17 @@ load_prompt_cache_file() {
 
   reject_secret_values_in_prompt_cache_file "${cache_file}" || return $?
 
-  for variable_name in "${PROMPT_CACHE_VARIABLES[@]}"; do
-    value_name="PROMPT_CACHE_ORIGINAL_${variable_name}"
-    flag_name="PROMPT_CACHE_ORIGINAL_${variable_name}_HAS_VALUE"
+  while IFS= read -r line; do
+    if [[ "${line}" =~ ^[[:space:]]*(STEAM_LOGIN|VPS_LOGIN|VPS_URL)=(.*)$ ]]; then
+      variable_name="${BASH_REMATCH[1]}"
+      raw_value="${BASH_REMATCH[2]}"
 
-    if [[ "${!flag_name:-0}" == "1" ]]; then
-      continue
+      if [[ "${!variable_name:-}" == "" ]]; then
+        printf -v "${variable_name}" '%s' "${raw_value}"
+      fi
     fi
 
-    flag_name="CONFIGURED_${variable_name}_WAS_SET"
-    if [[ "${!flag_name:-0}" == "1" ]]; then
-      value_name="CONFIGURED_${variable_name}"
-      printf -v "PROMPT_CACHE_ORIGINAL_${variable_name}_HAS_VALUE" '%s' "1"
-      printf -v "PROMPT_CACHE_ORIGINAL_${variable_name}" '%s' "${!value_name}"
-    else
-      printf -v "PROMPT_CACHE_ORIGINAL_${variable_name}_HAS_VALUE" '%s' "0"
-    fi
-  done
-
-  # shellcheck disable=SC1090
-  source "${cache_file}"
-
-  for variable_name in "${PROMPT_CACHE_VARIABLES[@]}"; do
-    value_name="PROMPT_CACHE_ORIGINAL_${variable_name}"
-    flag_name="PROMPT_CACHE_ORIGINAL_${variable_name}_HAS_VALUE"
-
-    if [[ "${!flag_name:-0}" == "1" ]]; then
-      printf -v "${variable_name}" '%s' "${!value_name}"
-    fi
-  done
+  done < <(env -i bash -c 'set -a; source "$1"; env' bash "${cache_file}")
 
   info "Loaded saved prompt values from ${cache_file}"
   return 0
@@ -418,26 +386,14 @@ prompt_config_value() {
   done
 }
 
-detect_vps_target() {
-  local detected_target=""
-
-  if [[ -n "${VPS_SSH_TARGET}" ]]; then
+refresh_vps_ssh_target() {
+  if [[ -n "${VPS_LOGIN}" && -n "${VPS_URL}" ]]; then
+    VPS_SSH_TARGET="${VPS_LOGIN}@${VPS_URL}"
     return 0
   fi
 
-  if ! command -v git >/dev/null 2>&1; then
-    return 1
-  fi
-
-  detected_target="$(git config --get steamcmd-servers.vpsSshTarget || true)"
-
-  if [[ -z "${detected_target}" ]]; then
-    return 1
-  fi
-
-  VPS_SSH_TARGET="${detected_target}"
-  info "Detected VPS_SSH_TARGET from git config: ${VPS_SSH_TARGET}"
-  return 0
+  VPS_SSH_TARGET=""
+  return 1
 }
 
 refresh_derived_directories() {
@@ -479,6 +435,8 @@ print_startup_settings_summary() {
   print_secret_startup_setting "Steam password" "${STEAM_PASSWORD:-}"
   print_secret_startup_setting "Steam Guard code" "${STEAM_GUARD_CODE:-}"
 
+  print_startup_setting "VPS login" "${VPS_LOGIN}"
+  print_startup_setting "VPS URL" "${VPS_URL}"
   print_startup_setting "VPS SSH target" "${VPS_SSH_TARGET}"
   print_startup_setting "VPS SSH port" "${VPS_SSH_PORT}"
   print_startup_setting "VPS base directory" "${VPS_BASE_DIR}"
@@ -529,35 +487,14 @@ confirm_startup_settings() {
 prompt_all_startup_settings() {
   info "Press Enter to keep the value shown between brackets."
 
-  prompt_config_value STEAMCMD_BIN "SteamCMD command or path" 1 0 || return $?
-  prompt_config_value LOG_DIR "Log directory" 1 0 || return $?
-
   prompt_config_value STEAM_LOGIN "Steam login" 1 0 || return $?
   prompt_config_value STEAM_PASSWORD "Steam password" 1 1 || return $?
   prompt_config_value STEAM_GUARD_CODE "Steam Guard code (optional, press Enter if not needed)" 0 1 || return $?
 
-  prompt_config_value VPS_SSH_TARGET "VPS SSH target (user@example.org)" 1 0 || return $?
-  prompt_config_value VPS_SSH_PORT "VPS SSH port" 1 0 || return $?
-  prompt_config_value VPS_BASE_DIR "VPS base directory" 1 0 || return $?
-  prompt_config_value VPS_OWNER "VPS owner uid:gid" 1 0 || return $?
-  prompt_config_value VPS_SUDO "VPS sudo command (empty only via config/env)" 0 0 || return $?
-  prompt_config_value VPS_RSYNC_PATH "VPS rsync path" 1 0 || return $?
-
-  prompt_config_value PC_STEAM_APPS_DIR "PC Steam apps base directory" 1 0 || return $?
+  prompt_config_value VPS_LOGIN "VPS SSH login" 1 0 || return $?
+  prompt_config_value VPS_URL "VPS URL or IP" 1 0 || return $?
+  refresh_vps_ssh_target || return $?
   refresh_derived_directories
-
-  prompt_config_value PC_RSYNC_DELETE "Delete files removed from source during rsync (1/0)" 1 0 || return $?
-  prompt_config_value PC_RSYNC_COMPRESS "Compress rsync transfer (1/0)" 1 0 || return $?
-  prompt_config_value PC_RSYNC_EXTRA_ARGS "Extra rsync args (optional)" 0 0 || return $?
-  prompt_config_value PC_REMEMBER_PROMPT_VALUES "Remember non-secret answers in hidden cache (1/0)" 1 0 || return $?
-
-  prompt_config_value ASSETTO_CORSA_ENABLED "Enable Assetto Corsa (1/0)" 1 0 || return $?
-  prompt_config_value ASSETTO_CORSA_LOCAL_DIR "Assetto Corsa local directory" 1 0 || return $?
-  prompt_config_value ASSETTO_CORSA_REMOTE_DIR "Assetto Corsa VPS directory" 1 0 || return $?
-
-  prompt_config_value SUBNAUTICA_ENABLED "Enable Subnautica (1/0)" 1 0 || return $?
-  prompt_config_value SUBNAUTICA_LOCAL_DIR "Subnautica local directory" 1 0 || return $?
-  prompt_config_value SUBNAUTICA_REMOTE_DIR "Subnautica VPS directory" 1 0 || return $?
 }
 
 validate_required_value() {
@@ -576,6 +513,9 @@ require_startup_settings() {
   validate_required_value LOG_DIR || return $?
   validate_required_value STEAM_LOGIN || return $?
   validate_required_value STEAM_PASSWORD || return $?
+  refresh_vps_ssh_target || true
+  validate_required_value VPS_LOGIN || return $?
+  validate_required_value VPS_URL || return $?
   validate_required_value VPS_SSH_TARGET || return $?
   validate_required_value VPS_SSH_PORT || return $?
   validate_required_value VPS_BASE_DIR || return $?
@@ -594,7 +534,7 @@ require_startup_settings() {
 }
 
 prompt_for_startup_settings() {
-  detect_vps_target || true
+  refresh_vps_ssh_target || true
   refresh_derived_directories
 
   step "Startup settings"
@@ -605,9 +545,7 @@ prompt_for_startup_settings() {
     return 0
   fi
 
-  read_config_value STEAM_LOGIN "Steam login" 0 || true
-  read_config_value STEAM_PASSWORD "Steam password" 1 || true
-  prompt_config_value STEAM_GUARD_CODE "Steam Guard code (optional, press Enter if not needed)" 0 1 || return $?
+  prompt_all_startup_settings || return $?
 
   while true; do
     print_startup_settings_summary
@@ -633,7 +571,7 @@ require_account() {
 
 require_vps_target() {
   if [[ -z "${VPS_SSH_TARGET}" ]]; then
-    fail "VPS_SSH_TARGET is required, for example user@example.org"
+    fail "VPS_LOGIN and VPS_URL are required, for example user and example.org"
     return 1
   fi
 

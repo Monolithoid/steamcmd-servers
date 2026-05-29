@@ -95,14 +95,12 @@ Default targets:
 
 | Target | AppID | Login | Platform | Local path | Remote path |
 | --- | ---: | --- | --- | --- | --- |
-| Assetto Corsa Dedicated Server | `302550` | Steam account | Windows | `~/steamcmd-servers/apps/assetto-corsa` | `/opt/gaming/assetto-corsa` |
-| Subnautica | `264710` | Steam account | Windows | `~/steamcmd-servers/apps/subnautica` | `/opt/gaming/subnautica` |
+| Assetto Corsa Dedicated Server | `302550` | Steam account | Windows | `/opt/gaming/assetto-corsa` | `/opt/gaming/assetto-corsa` |
+| Subnautica | `264710` | Steam account | Windows | `/opt/gaming/subnautica` | `/opt/gaming/subnautica` |
 
-Run it on the PC with a local config file (recommended, because no exported variables are needed before execution):
+Run it directly on the PC. The script asks for missing values and caches only non-secret answers:
 
 ```bash
-cp pc/updateGaming.env.example pc/updateGaming.env
-$EDITOR pc/updateGaming.env
 ./pc/updateGaming.sh
 ```
 
@@ -111,15 +109,12 @@ For one-off runs, the required values can still be provided inline:
 ```bash
 STEAM_LOGIN="<steam_user>" \
 STEAM_PASSWORD="<steam_password>" \
-VPS_SSH_TARGET="<ssh_user>@<vps_host>" \
+VPS_LOGIN="<ssh_user>" \
+VPS_URL="<vps_host>" \
 ./pc/updateGaming.sh
 ```
 
-If `STEAM_LOGIN`, `STEAM_PASSWORD`, or `VPS_SSH_TARGET` is missing and the script is attached to a terminal, it asks for the missing value. After an interactive prompt, it saves only non-secret answers (`STEAM_LOGIN` and `VPS_SSH_TARGET`) in the hidden file `~/.steamcmd-servers-pc.env` with `0600` permissions so the next run can reuse them. It never writes `STEAM_PASSWORD` or `STEAM_GUARD_CODE` to this file. Set `PC_REMEMBER_PROMPT_VALUES=0` to disable this cache, or set `PC_PROMPT_CACHE_FILE` to move it. The VPS target can also be detected from this optional Git config:
-
-```bash
-git config steamcmd-servers.vpsSshTarget "<ssh_user>@<vps_host>"
-```
+If `STEAM_LOGIN`, `STEAM_PASSWORD`, `VPS_LOGIN`, or `VPS_URL` is missing and the script is attached to a terminal, it asks for the missing value. After an interactive prompt, it saves only non-secret answers (`STEAM_LOGIN`, `VPS_LOGIN`, and `VPS_URL`) in the hidden file `~/.steamcmd-servers-pc.env` with `0600` permissions so the next run can reuse them. It never writes `STEAM_PASSWORD` or `STEAM_GUARD_CODE` to this file. Set `PC_REMEMBER_PROMPT_VALUES=0` to disable this cache, or set `PC_PROMPT_CACHE_FILE` to move it.
 
 If Steam Guard asks for a one-time code, rerun with:
 
@@ -138,35 +133,9 @@ The PC needs:
 
 The default remote copy uses `sudo rsync` on the VPS so that files can be written under `/opt/gaming`. Configure passwordless sudo for `rsync`, or change the remote path to a directory writable by your SSH user.
 
-### PC configuration overrides
+### PC install directories
 
-Common overrides can be placed in `pc/updateGaming.env` (copy `pc/updateGaming.env.example` first), which the script sources automatically before applying defaults:
-
-```bash
-PC_STEAM_APPS_DIR="$HOME/steamcmd-servers/apps"
-LOG_DIR="$HOME/steamcmd-servers/logs"
-
-VPS_SSH_TARGET="gaming@example.org"
-VPS_SSH_PORT=22
-VPS_BASE_DIR=/opt/gaming
-VPS_OWNER=1000:1000
-VPS_SUDO=sudo
-VPS_RSYNC_PATH="sudo rsync"
-
-PC_RSYNC_DELETE=1
-PC_RSYNC_COMPRESS=1
-PC_RSYNC_EXTRA_ARGS=""
-PC_PROMPT_CACHE_FILE="$HOME/.steamcmd-servers-pc.env"
-PC_REMEMBER_PROMPT_VALUES=1
-
-ASSETTO_CORSA_ENABLED=1
-ASSETTO_CORSA_LOCAL_DIR="$HOME/steamcmd-servers/apps/assetto-corsa"
-ASSETTO_CORSA_REMOTE_DIR=/opt/gaming/assetto-corsa
-
-SUBNAUTICA_ENABLED=1
-SUBNAUTICA_LOCAL_DIR="$HOME/steamcmd-servers/apps/subnautica"
-SUBNAUTICA_REMOTE_DIR=/opt/gaming/subnautica
-```
+By default, the PC updater installs games in `/opt/gaming/<game>` and synchronizes those same directory names to the VPS under `/opt/gaming/<game>`.
 
 Set `PC_RSYNC_DELETE=0` if you want rsync to avoid deleting files that exist only on the VPS.
 
@@ -230,7 +199,8 @@ ASSETTO_CORSA_FIREWALL_ENABLED=0 sudo ./vps/configureGaming.sh
    ```bash
    STEAM_LOGIN="<steam_user>" \
    STEAM_PASSWORD="<steam_password>" \
-   VPS_SSH_TARGET="<ssh_user>@<vps_host>" \
+   VPS_LOGIN="<ssh_user>" \
+   VPS_URL="<vps_host>" \
    ./pc/updateGaming.sh
    ```
 
