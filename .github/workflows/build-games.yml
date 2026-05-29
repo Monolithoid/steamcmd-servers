@@ -32,6 +32,7 @@ jobs:
           - assetto-corsa
           - rust
           - starrupture
+          - subnautica-nitrox
 
     steps:
       - uses: actions/checkout@v4
