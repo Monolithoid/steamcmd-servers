@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """Select the Linux Nitrox release asset to download."""
 
 from __future__ import annotations
@@ -7,7 +8,6 @@ import json
 import re
 import sys
 from pathlib import Path
-
 
 def main() -> int:
     if len(sys.argv) != 3:
@@ -44,7 +44,6 @@ def main() -> int:
         file=sys.stderr,
     )
     return 1
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

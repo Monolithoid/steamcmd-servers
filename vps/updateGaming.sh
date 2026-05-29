@@ -115,6 +115,7 @@ analyze_steamcmd_log() {
 
   if grep -q "Success! App '${app_id}' fully installed" "${log_file}"; then
     ok "Install/update completed"
+
     return 0
   fi
 
@@ -155,7 +156,8 @@ update_steam_game() {
   local steamcmd_args=()
 
   timestamp="$(date '+%Y%m%d-%H%M%S')"
-  log_file="${LOG_DIR}/${name}-${app_id}-${timestamp}.log"
+  safe_name="$(printf '%s' "${name}" | tr '[:upper:] ' '[:lower:]-')"
+  log_file="${LOG_DIR}/${safe_name}-${app_id}-${timestamp}.log"
 
   step "Updating SteamCMD app: ${name}"
 
@@ -194,13 +196,6 @@ update_steam_game() {
     return "${rc}"
   fi
 
-  analyze_steamcmd_log "${app_id}" "${log_file}"
-  analysis_rc=$?
-
-  return "${analysis_rc}"
-}
-
-# -----------------------------------------------------------------------------
 # Nitrox update
 # -----------------------------------------------------------------------------
 
@@ -359,7 +354,9 @@ main() {
 
     total=$((total + 1))
 
+
     if update_steam_game "${name}" "${app_id}" "${install_dir}" "${platform}" "${login_mode}"; then
+
       success=$((success + 1))
     else
       failed=$((failed + 1))
@@ -367,6 +364,7 @@ main() {
   done
 
   total=$((total + 1))
+
   if update_nitrox; then
     success=$((success + 1))
   else
