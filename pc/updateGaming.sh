@@ -51,6 +51,24 @@ restore_config_overrides() {
   done
 }
 
+remember_configured_values() {
+  local variable_name=""
+  local value_name=""
+  local flag_name=""
+
+  for variable_name in "$@"; do
+    value_name="CONFIGURED_${variable_name}"
+    flag_name="CONFIGURED_${variable_name}_WAS_SET"
+
+    if [[ -n "${!variable_name+x}" ]]; then
+      printf -v "${flag_name}" '%s' "1"
+      printf -v "${value_name}" '%s' "${!variable_name}"
+    else
+      printf -v "${flag_name}" '%s' "0"
+    fi
+  done
+}
+
 reject_account_credentials_in_config_file() {
   local config_file="$1"
   local line=""
@@ -151,10 +169,11 @@ CONFIG_VARIABLES=(
 remember_config_overrides "${CONFIG_VARIABLES[@]}"
 load_config_file "${CONFIG_FILE}" || exit $?
 restore_config_overrides "${CONFIG_VARIABLES[@]}"
+remember_configured_values "${CONFIG_VARIABLES[@]}"
 
 STEAMCMD_BIN="${STEAMCMD_BIN:-steamcmd}"
 LOG_DIR="${LOG_DIR:-${HOME}/steamcmd-servers/logs}"
-PC_STEAM_APPS_DIR="${PC_STEAM_APPS_DIR:-${HOME}/steamcmd-servers/apps}"
+PC_STEAM_APPS_DIR="${PC_STEAM_APPS_DIR:-${VPS_BASE_DIR:-/opt/gaming}}"
 
 VPS_SSH_TARGET="${VPS_SSH_TARGET:-}"
 VPS_SSH_PORT="${VPS_SSH_PORT:-22}"
@@ -178,11 +197,27 @@ SUBNAUTICA_LOCAL_DIR="${SUBNAUTICA_LOCAL_DIR:-${PC_STEAM_APPS_DIR}/subnautica}"
 ASSETTO_CORSA_REMOTE_DIR="${ASSETTO_CORSA_REMOTE_DIR:-${VPS_BASE_DIR}/assetto-corsa}"
 SUBNAUTICA_REMOTE_DIR="${SUBNAUTICA_REMOTE_DIR:-${VPS_BASE_DIR}/subnautica}"
 
-mkdir -p "${LOG_DIR}" "${PC_STEAM_APPS_DIR}"
-
 PROMPT_CACHE_VARIABLES=(
+  STEAMCMD_BIN
+  LOG_DIR
   STEAM_LOGIN
   VPS_SSH_TARGET
+  VPS_SSH_PORT
+  VPS_BASE_DIR
+  VPS_OWNER
+  VPS_SUDO
+  VPS_RSYNC_PATH
+  PC_STEAM_APPS_DIR
+  PC_RSYNC_DELETE
+  PC_RSYNC_COMPRESS
+  PC_RSYNC_EXTRA_ARGS
+  PC_REMEMBER_PROMPT_VALUES
+  ASSETTO_CORSA_ENABLED
+  SUBNAUTICA_ENABLED
+  ASSETTO_CORSA_LOCAL_DIR
+  SUBNAUTICA_LOCAL_DIR
+  ASSETTO_CORSA_REMOTE_DIR
+  SUBNAUTICA_REMOTE_DIR
 )
 
 load_prompt_cache_file() {
@@ -201,11 +236,17 @@ load_prompt_cache_file() {
     value_name="PROMPT_CACHE_ORIGINAL_${variable_name}"
     flag_name="PROMPT_CACHE_ORIGINAL_${variable_name}_HAS_VALUE"
 
-    if [[ -n "${!variable_name:-}" ]]; then
-      printf -v "${flag_name}" '%s' "1"
-      printf -v "${value_name}" '%s' "${!variable_name}"
+    if [[ "${!flag_name:-0}" == "1" ]]; then
+      continue
+    fi
+
+    flag_name="CONFIGURED_${variable_name}_WAS_SET"
+    if [[ "${!flag_name:-0}" == "1" ]]; then
+      value_name="CONFIGURED_${variable_name}"
+      printf -v "PROMPT_CACHE_ORIGINAL_${variable_name}_HAS_VALUE" '%s' "1"
+      printf -v "PROMPT_CACHE_ORIGINAL_${variable_name}" '%s' "${!value_name}"
     else
-      printf -v "${flag_name}" '%s' "0"
+      printf -v "PROMPT_CACHE_ORIGINAL_${variable_name}_HAS_VALUE" '%s' "0"
     fi
   done
 
@@ -313,6 +354,70 @@ read_config_value() {
   return 0
 }
 
+prompt_config_value() {
+  local variable_name="$1"
+  local prompt="$2"
+  local required="${3:-0}"
+  local secret="${4:-0}"
+  local current_value="${!variable_name:-}"
+  local entered_value=""
+  local display_prompt=""
+
+  if ! is_interactive; then
+    if [[ "${required}" == "1" && -z "${current_value}" ]]; then
+      fail "${variable_name} is required"
+      return 1
+    fi
+
+    return 0
+  fi
+
+  if [[ "${secret}" == "1" ]]; then
+    display_prompt="${prompt}"
+    if [[ -n "${current_value}" ]]; then
+      display_prompt="${display_prompt} [already set; press Enter to keep]"
+    fi
+
+    while true; do
+      printf '%s: ' "${display_prompt}"
+      read -r -s entered_value
+      printf '\n'
+
+      if [[ -n "${entered_value}" ]]; then
+        printf -v "${variable_name}" '%s' "${entered_value}"
+        return 0
+      fi
+
+      if [[ -n "${current_value}" || "${required}" != "1" ]]; then
+        return 0
+      fi
+
+      warn "A value is required for ${variable_name}"
+    done
+  fi
+
+  display_prompt="${prompt}"
+  if [[ -n "${current_value}" ]]; then
+    display_prompt="${display_prompt} [${current_value}]"
+  fi
+
+  while true; do
+    printf '%s: ' "${display_prompt}"
+    read -r entered_value
+
+    if [[ -n "${entered_value}" ]]; then
+      printf -v "${variable_name}" '%s' "${entered_value}"
+      return 0
+    fi
+
+    if [[ -n "${current_value}" || "${required}" != "1" ]]; then
+      return 0
+    fi
+
+    warn "A value is required for ${variable_name}"
+  done
+}
+
 detect_vps_target() {
   local detected_target=""
 
@@ -335,13 +440,186 @@ detect_vps_target() {
   return 0
 }
 
-prompt_for_missing_settings() {
+refresh_derived_directories() {
+  ASSETTO_CORSA_LOCAL_DIR="${ASSETTO_CORSA_LOCAL_DIR:-${PC_STEAM_APPS_DIR}/assetto-corsa}"
+  SUBNAUTICA_LOCAL_DIR="${SUBNAUTICA_LOCAL_DIR:-${PC_STEAM_APPS_DIR}/subnautica}"
+  ASSETTO_CORSA_REMOTE_DIR="${ASSETTO_CORSA_REMOTE_DIR:-${VPS_BASE_DIR}/assetto-corsa}"
+  SUBNAUTICA_REMOTE_DIR="${SUBNAUTICA_REMOTE_DIR:-${VPS_BASE_DIR}/subnautica}"
+}
+
+print_startup_setting() {
+  local label="$1"
+  local value="$2"
+
+  if [[ -z "${value}" ]]; then
+    value="<empty>"
+  fi
+
+  printf '  %-34s %s\n' "${label}:" "${value}"
+}
+
+print_secret_startup_setting() {
+  local label="$1"
+  local value="$2"
+  local display_value="<empty>"
+
+  if [[ -n "${value}" ]]; then
+    display_value="<set>"
+  fi
+
+  print_startup_setting "${label}" "${display_value}"
+}
+
+print_startup_settings_summary() {
+  step "Proposed startup settings"
+
+  print_startup_setting "SteamCMD" "${STEAMCMD_BIN}"
+  print_startup_setting "Log directory" "${LOG_DIR}"
+  print_startup_setting "Steam login" "${STEAM_LOGIN:-}"
+  print_secret_startup_setting "Steam password" "${STEAM_PASSWORD:-}"
+  print_secret_startup_setting "Steam Guard code" "${STEAM_GUARD_CODE:-}"
+
+  print_startup_setting "VPS SSH target" "${VPS_SSH_TARGET}"
+  print_startup_setting "VPS SSH port" "${VPS_SSH_PORT}"
+  print_startup_setting "VPS base directory" "${VPS_BASE_DIR}"
+  print_startup_setting "VPS owner" "${VPS_OWNER}"
+  print_startup_setting "VPS sudo command" "${VPS_SUDO}"
+  print_startup_setting "VPS rsync path" "${VPS_RSYNC_PATH}"
+
+  print_startup_setting "PC apps base directory" "${PC_STEAM_APPS_DIR}"
+  print_startup_setting "Rsync delete" "${PC_RSYNC_DELETE}"
+  print_startup_setting "Rsync compress" "${PC_RSYNC_COMPRESS}"
+  print_startup_setting "Rsync extra args" "${PC_RSYNC_EXTRA_ARGS}"
+  print_startup_setting "Remember prompt values" "${PC_REMEMBER_PROMPT_VALUES}"
+
+  print_startup_setting "Assetto Corsa enabled" "${ASSETTO_CORSA_ENABLED}"
+  print_startup_setting "Assetto Corsa local dir" "${ASSETTO_CORSA_LOCAL_DIR}"
+  print_startup_setting "Assetto Corsa VPS dir" "${ASSETTO_CORSA_REMOTE_DIR}"
+
+  print_startup_setting "Subnautica enabled" "${SUBNAUTICA_ENABLED}"
+  print_startup_setting "Subnautica local dir" "${SUBNAUTICA_LOCAL_DIR}"
+  print_startup_setting "Subnautica VPS dir" "${SUBNAUTICA_REMOTE_DIR}"
+}
+
+confirm_startup_settings() {
+  local answer=""
+
+  if ! is_interactive; then
+    return 0
+  fi
+
+  while true; do
+    printf 'Validate these settings? Press Enter for yes, type n to edit [Y/n]: '
+    read -r answer
+
+    case "${answer}" in
+      ""|"y"|"Y"|"yes"|"YES")
+        return 0
+        ;;
+      "n"|"N"|"no"|"NO")
+        return 1
+        ;;
+      *)
+        warn "Answer y or n"
+        ;;
+    esac
+  done
+}
+
+prompt_all_startup_settings() {
+  info "Press Enter to keep the value shown between brackets."
+
+  prompt_config_value STEAMCMD_BIN "SteamCMD command or path" 1 0 || return $?
+  prompt_config_value LOG_DIR "Log directory" 1 0 || return $?
+
+  prompt_config_value STEAM_LOGIN "Steam login" 1 0 || return $?
+  prompt_config_value STEAM_PASSWORD "Steam password" 1 1 || return $?
+  prompt_config_value STEAM_GUARD_CODE "Steam Guard code (optional, press Enter if not needed)" 0 1 || return $?
+
+  prompt_config_value VPS_SSH_TARGET "VPS SSH target (user@example.org)" 1 0 || return $?
+  prompt_config_value VPS_SSH_PORT "VPS SSH port" 1 0 || return $?
+  prompt_config_value VPS_BASE_DIR "VPS base directory" 1 0 || return $?
+  prompt_config_value VPS_OWNER "VPS owner uid:gid" 1 0 || return $?
+  prompt_config_value VPS_SUDO "VPS sudo command (empty only via config/env)" 0 0 || return $?
+  prompt_config_value VPS_RSYNC_PATH "VPS rsync path" 1 0 || return $?
+
+  prompt_config_value PC_STEAM_APPS_DIR "PC Steam apps base directory" 1 0 || return $?
+  refresh_derived_directories
+
+  prompt_config_value PC_RSYNC_DELETE "Delete files removed from source during rsync (1/0)" 1 0 || return $?
+  prompt_config_value PC_RSYNC_COMPRESS "Compress rsync transfer (1/0)" 1 0 || return $?
+  prompt_config_value PC_RSYNC_EXTRA_ARGS "Extra rsync args (optional)" 0 0 || return $?
+  prompt_config_value PC_REMEMBER_PROMPT_VALUES "Remember non-secret answers in hidden cache (1/0)" 1 0 || return $?
+
+  prompt_config_value ASSETTO_CORSA_ENABLED "Enable Assetto Corsa (1/0)" 1 0 || return $?
+  prompt_config_value ASSETTO_CORSA_LOCAL_DIR "Assetto Corsa local directory" 1 0 || return $?
+  prompt_config_value ASSETTO_CORSA_REMOTE_DIR "Assetto Corsa VPS directory" 1 0 || return $?
+
+  prompt_config_value SUBNAUTICA_ENABLED "Enable Subnautica (1/0)" 1 0 || return $?
+  prompt_config_value SUBNAUTICA_LOCAL_DIR "Subnautica local directory" 1 0 || return $?
+  prompt_config_value SUBNAUTICA_REMOTE_DIR "Subnautica VPS directory" 1 0 || return $?
+}
+
+validate_required_value() {
+  local variable_name="$1"
+
+  if [[ -n "${!variable_name:-}" ]]; then
+    return 0
+  fi
+
+  fail "${variable_name} is required"
+  return 1
+}
+
+require_startup_settings() {
+  validate_required_value STEAMCMD_BIN || return $?
+  validate_required_value LOG_DIR || return $?
+  validate_required_value STEAM_LOGIN || return $?
+  validate_required_value STEAM_PASSWORD || return $?
+  validate_required_value VPS_SSH_TARGET || return $?
+  validate_required_value VPS_SSH_PORT || return $?
+  validate_required_value VPS_BASE_DIR || return $?
+  validate_required_value VPS_OWNER || return $?
+  validate_required_value VPS_RSYNC_PATH || return $?
+  validate_required_value PC_STEAM_APPS_DIR || return $?
+  validate_required_value PC_RSYNC_DELETE || return $?
+  validate_required_value PC_RSYNC_COMPRESS || return $?
+  validate_required_value PC_REMEMBER_PROMPT_VALUES || return $?
+  validate_required_value ASSETTO_CORSA_ENABLED || return $?
+  validate_required_value ASSETTO_CORSA_LOCAL_DIR || return $?
+  validate_required_value ASSETTO_CORSA_REMOTE_DIR || return $?
+  validate_required_value SUBNAUTICA_ENABLED || return $?
+  validate_required_value SUBNAUTICA_LOCAL_DIR || return $?
+  validate_required_value SUBNAUTICA_REMOTE_DIR || return $?
+}
+
+prompt_for_startup_settings() {
   detect_vps_target || true
+  refresh_derived_directories
+
+  step "Startup settings"
+
+  if ! is_interactive; then
+    require_startup_settings || return $?
+    mkdir -p "${LOG_DIR}" "${PC_STEAM_APPS_DIR}" || return $?
+    return 0
+  fi
 
   read_config_value STEAM_LOGIN "Steam login" 0 || true
   read_config_value STEAM_PASSWORD "Steam password" 1 || true
-  read_config_value VPS_SSH_TARGET "VPS SSH target (user@example.org)" 0 || true
-  write_prompt_cache_file "${PC_PROMPT_CACHE_FILE}" || true
+  prompt_config_value STEAM_GUARD_CODE "Steam Guard code (optional, press Enter if not needed)" 0 1 || return $?
+
+  while true; do
+    print_startup_settings_summary
+
+    if confirm_startup_settings; then
+      require_startup_settings || return $?
+      mkdir -p "${LOG_DIR}" "${PC_STEAM_APPS_DIR}" || return $?
+      return 0
+    fi
+
+    prompt_all_startup_settings || return $?
+  done
 }
 
 require_account() {
@@ -591,7 +869,7 @@ main() {
   local failed=0
 
   step "Updating account-bound apps locally, then copying them to the VPS"
-  prompt_for_missing_settings
+  prompt_for_startup_settings || return $?
 
   total=$((total + 1))
   if run_target "${ASSETTO_CORSA_ENABLED}" "Assetto Corsa Dedicated Server" "302550" "${ASSETTO_CORSA_LOCAL_DIR}" "${ASSETTO_CORSA_REMOTE_DIR}" "windows"; then
@@ -617,6 +895,7 @@ main() {
     return 1
   fi
 
+  write_prompt_cache_file "${PC_PROMPT_CACHE_FILE}" || true
   ok "All updates and copies completed"
   return 0
 }
