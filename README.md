@@ -92,6 +92,53 @@ steamcmd \
 ```
 
 
+<<<<<<< Updated upstream
+=======
+### Subnautica Nitrox Server
+
+Nitrox is not distributed through SteamCMD. This image derives from `monolithoid/steamcmd-linux-core`, adds the .NET runtime required by Nitrox, and remains runtime-only. Copy a legal Subnautica Steam installation manually from your PC to `/opt/gaming/subnautica`, then install or update the Linux Nitrox release on the VPS and mount it into `/opt/nitrox`.
+
+Preferred VPS update path:
+
+```bash
+NITROX_ENABLED=1 ./vps/updateGaming.sh
+```
+
+Host prerequisites for the Nitrox updater are `curl`, `python3`, `unzip`, and `rsync`.
+
+To pin a specific Nitrox release:
+
+```bash
+NITROX_VERSION=1.8.1.0 ./vps/updateGaming.sh
+```
+
+The updater preserves `Nitrox/saves/` and `Nitrox/server.cfg`.
+
+Manual fallback:
+
+```bash
+sudo mkdir -p /opt/gaming/subnautica-nitrox
+cd /opt/gaming/subnautica-nitrox
+sudo curl -fL \
+  https://github.com/SubnauticaNitrox/Nitrox/releases/download/1.8.1.0/Nitrox_1.8.1.0_linux_x64.zip \
+  -o nitrox.zip
+sudo unzip -o nitrox.zip
+sudo chmod +x Nitrox.Server.Subnautica
+sudo chown -R 1000:1000 /opt/gaming/subnautica-nitrox
+```
+
+```bash
+docker run -d \
+  --name subnautica-nitrox \
+  -p 11000:11000/udp \
+  -p 11000:11000/tcp \
+  -e SUBNAUTICA_INSTALLATION_PATH=/subnautica \
+  -v /opt/gaming/subnautica:/subnautica:ro \
+  -v /opt/gaming/subnautica-nitrox:/opt/nitrox \
+  monolithoid/subnautica-nitrox-server:latest
+```
+
+>>>>>>> Stashed changes
 ### Abiotic Factor Dedicated Server
 
 This image is runtime-only on Wine core. Install/update server binaries manually on host, then mount them into `/opt/server`.
