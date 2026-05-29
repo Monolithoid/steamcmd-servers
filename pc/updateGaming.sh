@@ -67,6 +67,21 @@ reject_account_credentials_in_config_file() {
   return 0
 }
 
+reject_secret_values_in_prompt_cache_file() {
+  local cache_file="$1"
+  local line=""
+
+  while IFS= read -r line; do
+    if [[ "${line}" =~ ^[[:space:]]*(export[[:space:]]+)?(STEAM_PASSWORD|STEAM_GUARD_CODE)[[:space:]]*= ]]; then
+      fail "Do not store Steam passwords or Steam Guard codes in ${cache_file}"
+      info "Remove STEAM_PASSWORD and STEAM_GUARD_CODE from the hidden prompt cache."
+      return 1
+    fi
+  done < "${cache_file}"
+
+  return 0
+}
+
 load_config_file() {
   local config_file="$1"
 
@@ -120,6 +135,8 @@ CONFIG_VARIABLES=(
   PC_RSYNC_DELETE
   PC_RSYNC_COMPRESS
   PC_RSYNC_EXTRA_ARGS
+  PC_PROMPT_CACHE_FILE
+  PC_REMEMBER_PROMPT_VALUES
   ASSETTO_CORSA_ENABLED
   SUBNAUTICA_ENABLED
   ASSETTO_CORSA_LOCAL_DIR
@@ -149,6 +166,8 @@ VPS_RSYNC_PATH="${VPS_RSYNC_PATH:-sudo rsync}"
 PC_RSYNC_DELETE="${PC_RSYNC_DELETE:-1}"
 PC_RSYNC_COMPRESS="${PC_RSYNC_COMPRESS:-1}"
 PC_RSYNC_EXTRA_ARGS="${PC_RSYNC_EXTRA_ARGS:-}"
+PC_PROMPT_CACHE_FILE="${PC_PROMPT_CACHE_FILE:-${HOME}/.steamcmd-servers-pc.env}"
+PC_REMEMBER_PROMPT_VALUES="${PC_REMEMBER_PROMPT_VALUES:-1}"
 
 ASSETTO_CORSA_ENABLED="${ASSETTO_CORSA_ENABLED:-1}"
 SUBNAUTICA_ENABLED="${SUBNAUTICA_ENABLED:-1}"
@@ -160,6 +179,89 @@ ASSETTO_CORSA_REMOTE_DIR="${ASSETTO_CORSA_REMOTE_DIR:-${VPS_BASE_DIR}/assetto-co
 SUBNAUTICA_REMOTE_DIR="${SUBNAUTICA_REMOTE_DIR:-${VPS_BASE_DIR}/subnautica}"
 
 mkdir -p "${LOG_DIR}" "${PC_STEAM_APPS_DIR}"
+
+PROMPT_CACHE_VARIABLES=(
+  STEAM_LOGIN
+  VPS_SSH_TARGET
+)
+
+load_prompt_cache_file() {
+  local cache_file="$1"
+  local variable_name=""
+  local value_name=""
+  local flag_name=""
+
+  if [[ ! -f "${cache_file}" ]]; then
+    return 0
+  fi
+
+  reject_secret_values_in_prompt_cache_file "${cache_file}" || return $?
+
+  for variable_name in "${PROMPT_CACHE_VARIABLES[@]}"; do
+    value_name="PROMPT_CACHE_ORIGINAL_${variable_name}"
+    flag_name="PROMPT_CACHE_ORIGINAL_${variable_name}_HAS_VALUE"
+
+    if [[ -n "${!variable_name:-}" ]]; then
+      printf -v "${flag_name}" '%s' "1"
+      printf -v "${value_name}" '%s' "${!variable_name}"
+    else
+      printf -v "${flag_name}" '%s' "0"
+    fi
+  done
+
+  # shellcheck disable=SC1090
+  source "${cache_file}"
+
+  for variable_name in "${PROMPT_CACHE_VARIABLES[@]}"; do
+    value_name="PROMPT_CACHE_ORIGINAL_${variable_name}"
+    flag_name="PROMPT_CACHE_ORIGINAL_${variable_name}_HAS_VALUE"
+
+    if [[ "${!flag_name:-0}" == "1" ]]; then
+      printf -v "${variable_name}" '%s' "${!value_name}"
+    fi
+  done
+
+  info "Loaded saved prompt values from ${cache_file}"
+  return 0
+}
+
+shell_escape_value() {
+  printf '%q' "$1"
+}
+
+write_prompt_cache_file() {
+  local cache_file="$1"
+  local cache_dir=""
+  local temp_file=""
+  local variable_name=""
+
+  if [[ "${PC_REMEMBER_PROMPT_VALUES}" != "1" ]]; then
+    return 0
+  fi
+
+  cache_dir="$(dirname "${cache_file}")"
+  mkdir -p "${cache_dir}"
+  temp_file="$(mktemp "${cache_dir}/.updateGaming-cache.XXXXXX")"
+  chmod 600 "${temp_file}"
+
+  {
+    printf '# Saved non-secret values for pc/updateGaming.sh.\n'
+    printf '# This file is generated automatically; do not add passwords or Steam Guard codes.\n'
+
+    for variable_name in "${PROMPT_CACHE_VARIABLES[@]}"; do
+      if [[ -n "${!variable_name:-}" ]]; then
+        printf '%s=%s\n' "${variable_name}" "$(shell_escape_value "${!variable_name}")"
+      fi
+    done
+  } > "${temp_file}"
+
+  mv "${temp_file}" "${cache_file}"
+  chmod 600 "${cache_file}"
+  info "Saved non-secret prompt values in ${cache_file}"
+  return 0
+}
+
+load_prompt_cache_file "${PC_PROMPT_CACHE_FILE}" || exit $?
 
 require_command() {
   local command_name="$1"
@@ -239,6 +341,7 @@ prompt_for_missing_settings() {
   read_config_value STEAM_LOGIN "Steam login" 0 || true
   read_config_value STEAM_PASSWORD "Steam password" 1 || true
   read_config_value VPS_SSH_TARGET "VPS SSH target (user@example.org)" 0 || true
+  write_prompt_cache_file "${PC_PROMPT_CACHE_FILE}" || true
 }
 
 require_account() {
