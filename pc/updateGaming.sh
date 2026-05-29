@@ -51,10 +51,28 @@ restore_config_overrides() {
   done
 }
 
+reject_account_credentials_in_config_file() {
+  local config_file="$1"
+  local line=""
+
+  while IFS= read -r line; do
+    if [[ "${line}" =~ ^[[:space:]]*(export[[:space:]]+)?(STEAM_LOGIN|STEAM_PASSWORD|STEAM_GUARD_CODE)[[:space:]]*= ]]; then
+      fail "Do not store Steam account credentials in ${config_file}"
+      info "Remove STEAM_LOGIN, STEAM_PASSWORD, and STEAM_GUARD_CODE from the config file."
+      info "Run the script from a terminal so it can ask for account details securely at runtime."
+      return 1
+    fi
+  done < "${config_file}"
+
+  return 0
+}
+
 load_config_file() {
   local config_file="$1"
 
   if [[ -f "${config_file}" ]]; then
+    reject_account_credentials_in_config_file "${config_file}" || return $?
+
     # shellcheck disable=SC1090
     source "${config_file}"
     return 0
