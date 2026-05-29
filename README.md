@@ -104,15 +104,13 @@ Default targets:
 - Assetto Corsa Dedicated Server (`302550`) copied to `/opt/gaming/assetto-corsa`.
 - Subnautica (`264710`) copied to `/opt/gaming/subnautica` for the Nitrox server.
 
-Example with a local config file (recommended for VPS/copy settings only):
+Run the script directly from a Bash-compatible environment:
 
 ```bash
-cp pc/updateGaming.env.example pc/updateGaming.env
-$EDITOR pc/updateGaming.env
 ./pc/updateGaming.sh
 ```
 
-Do not store Steam account credentials in `pc/updateGaming.env`. When the script is attached to a terminal, it asks for the Steam login and password at runtime, keeping those values out of the config file. The script can remember only non-secret prompt values (`STEAM_LOGIN` and `VPS_SSH_TARGET`) in `~/.steamcmd-servers-pc.env` with `0600` permissions; it never writes the Steam password or Steam Guard code there. Set `PC_REMEMBER_PROMPT_VALUES=0` to disable that hidden cache, or set `PC_PROMPT_CACHE_FILE` to use another path. SteamCMD itself does not support reusing an already-open browser or Steam client session for these downloads, so the safe fallback is the console prompt.
+On the first interactive run, the script asks for the Steam login, Steam password, VPS SSH login, and VPS URL/IP. It remembers only the non-secret values (`STEAM_LOGIN`, `VPS_LOGIN`, and `VPS_URL`) in `~/.steamcmd-servers-pc.env` with `0600` permissions; later runs only need the Steam password and optional Steam Guard code. It never writes the Steam password or Steam Guard code to the cache. SteamCMD itself does not support reusing an already-open browser or Steam client session for these downloads, so the safe fallback is the console prompt.
 
 PowerShell can start the PC updater only through a Bash-compatible environment, for example WSL or Git Bash:
 
@@ -129,32 +127,17 @@ For one-off non-interactive runs, the Steam values can still be provided inline,
 ```bash
 STEAM_LOGIN="<steam_user>" \
 STEAM_PASSWORD="<steam_password>" \
-VPS_SSH_TARGET="<ssh_user>@<vps_host>" \
+VPS_LOGIN="<ssh_user>" \
+VPS_URL="<vps_host>" \
 ./pc/updateGaming.sh
 ```
 
-If `STEAM_LOGIN`, `STEAM_PASSWORD`, or `VPS_SSH_TARGET` is missing and the script is attached to a terminal, it asks for the missing value. Non-secret answers are saved to the hidden prompt cache for later runs unless `PC_REMEMBER_PROMPT_VALUES=0` is set. The VPS target can also be detected from this optional Git config:
-
-```bash
-git config steamcmd-servers.vpsSshTarget "<ssh_user>@<vps_host>"
-```
+If `STEAM_LOGIN`, `STEAM_PASSWORD`, `VPS_LOGIN`, or `VPS_URL` is missing and the script is attached to a terminal, it asks for the missing value. Non-secret answers are saved to the hidden prompt cache for later runs unless `PC_REMEMBER_PROMPT_VALUES=0` is set.
 
 If Steam Guard requires a one-time code, let SteamCMD ask for it in the terminal during login. For automation only, you can still pass a one-time value inline:
 
 ```bash
 STEAM_GUARD_CODE="<steam_guard_code>" ./pc/updateGaming.sh
-```
-
-Common copy overrides can also go in `pc/updateGaming.env`:
-
-```bash
-VPS_SSH_PORT="22"
-VPS_BASE_DIR="/opt/gaming"
-VPS_OWNER="1000:1000"
-VPS_RSYNC_PATH="sudo rsync"
-PC_RSYNC_DELETE="1"
-PC_PROMPT_CACHE_FILE="$HOME/.steamcmd-servers-pc.env"
-PC_REMEMBER_PROMPT_VALUES="1"
 ```
 
 
@@ -239,9 +222,8 @@ Preferred workflow:
 
 ```bash
 # On the PC
-# Keep Steam account credentials out of pc/updateGaming.env;
-# the script asks for them in the terminal.
-VPS_SSH_TARGET=<ssh_user>@<vps_host> ./pc/updateGaming.sh
+# The script asks for secrets in the terminal and caches only non-secret values.
+VPS_LOGIN=<ssh_user> VPS_URL=<vps_host> ./pc/updateGaming.sh
 
 # On the VPS
 NITROX_ENABLED=1 ./vps/updateGaming.sh
