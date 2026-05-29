@@ -104,7 +104,7 @@ Default targets:
 - Assetto Corsa Dedicated Server (`302550`) copied to `/opt/gaming/assetto-corsa`.
 - Subnautica (`264710`) copied to `/opt/gaming/subnautica` for the Nitrox server.
 
-Example with a local config file (recommended, because no exported variables are needed before execution):
+Example with a local config file (recommended for VPS/copy settings only):
 
 ```bash
 cp pc/updateGaming.env.example pc/updateGaming.env
@@ -112,7 +112,9 @@ $EDITOR pc/updateGaming.env
 ./pc/updateGaming.sh
 ```
 
-For one-off runs, the required values can still be provided inline:
+Do not store Steam account credentials in `pc/updateGaming.env`. When the script is attached to a terminal, it asks for the Steam login and password at runtime, keeping those values out of the config file. SteamCMD itself does not support reusing an already-open browser or Steam client session for these downloads, so the safe fallback is the console prompt.
+
+For one-off non-interactive runs, the Steam values can still be provided inline, but this is less safe because credentials may be visible to the shell environment or process tooling:
 
 ```bash
 STEAM_LOGIN="<steam_user>" \
@@ -127,7 +129,7 @@ If `STEAM_LOGIN`, `STEAM_PASSWORD`, or `VPS_SSH_TARGET` is missing and the scrip
 git config steamcmd-servers.vpsSshTarget "<ssh_user>@<vps_host>"
 ```
 
-If Steam Guard requires a one-time code:
+If Steam Guard requires a one-time code, let SteamCMD ask for it in the terminal during login. For automation only, you can still pass a one-time value inline:
 
 ```bash
 STEAM_GUARD_CODE="<steam_guard_code>" ./pc/updateGaming.sh
@@ -225,10 +227,9 @@ Preferred workflow:
 
 ```bash
 # On the PC
-STEAM_LOGIN=<steam_user> \
-STEAM_PASSWORD=<steam_password> \
-VPS_SSH_TARGET=<ssh_user>@<vps_host> \
-./pc/updateGaming.sh
+# Keep Steam account credentials out of pc/updateGaming.env;
+# the script asks for them in the terminal.
+VPS_SSH_TARGET=<ssh_user>@<vps_host> ./pc/updateGaming.sh
 
 # On the VPS
 NITROX_ENABLED=1 ./vps/updateGaming.sh
