@@ -112,7 +112,7 @@ $EDITOR pc/updateGaming.env
 ./pc/updateGaming.sh
 ```
 
-Do not store Steam account credentials in `pc/updateGaming.env`. When the script is attached to a terminal, it asks for the Steam login and password at runtime, keeping those values out of the config file. SteamCMD itself does not support reusing an already-open browser or Steam client session for these downloads, so the safe fallback is the console prompt.
+Do not store Steam account credentials in `pc/updateGaming.env`. When the script is attached to a terminal, it asks for the Steam login and password at runtime, keeping those values out of the config file. The script can remember only non-secret prompt values (`STEAM_LOGIN` and `VPS_SSH_TARGET`) in `~/.steamcmd-servers-pc.env` with `0600` permissions; it never writes the Steam password or Steam Guard code there. Set `PC_REMEMBER_PROMPT_VALUES=0` to disable that hidden cache, or set `PC_PROMPT_CACHE_FILE` to use another path. SteamCMD itself does not support reusing an already-open browser or Steam client session for these downloads, so the safe fallback is the console prompt.
 
 PowerShell can start the PC updater only through a Bash-compatible environment, for example WSL or Git Bash:
 
@@ -133,7 +133,7 @@ VPS_SSH_TARGET="<ssh_user>@<vps_host>" \
 ./pc/updateGaming.sh
 ```
 
-If `STEAM_LOGIN`, `STEAM_PASSWORD`, or `VPS_SSH_TARGET` is missing and the script is attached to a terminal, it asks for the missing value. The VPS target can also be detected from this optional Git config:
+If `STEAM_LOGIN`, `STEAM_PASSWORD`, or `VPS_SSH_TARGET` is missing and the script is attached to a terminal, it asks for the missing value. Non-secret answers are saved to the hidden prompt cache for later runs unless `PC_REMEMBER_PROMPT_VALUES=0` is set. The VPS target can also be detected from this optional Git config:
 
 ```bash
 git config steamcmd-servers.vpsSshTarget "<ssh_user>@<vps_host>"
@@ -153,6 +153,8 @@ VPS_BASE_DIR="/opt/gaming"
 VPS_OWNER="1000:1000"
 VPS_RSYNC_PATH="sudo rsync"
 PC_RSYNC_DELETE="1"
+PC_PROMPT_CACHE_FILE="$HOME/.steamcmd-servers-pc.env"
+PC_REMEMBER_PROMPT_VALUES="1"
 ```
 
 

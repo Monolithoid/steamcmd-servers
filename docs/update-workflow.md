@@ -115,7 +115,7 @@ VPS_SSH_TARGET="<ssh_user>@<vps_host>" \
 ./pc/updateGaming.sh
 ```
 
-If `STEAM_LOGIN`, `STEAM_PASSWORD`, or `VPS_SSH_TARGET` is missing and the script is attached to a terminal, it asks for the missing value. The VPS target can also be detected from this optional Git config:
+If `STEAM_LOGIN`, `STEAM_PASSWORD`, or `VPS_SSH_TARGET` is missing and the script is attached to a terminal, it asks for the missing value. After an interactive prompt, it saves only non-secret answers (`STEAM_LOGIN` and `VPS_SSH_TARGET`) in the hidden file `~/.steamcmd-servers-pc.env` with `0600` permissions so the next run can reuse them. It never writes `STEAM_PASSWORD` or `STEAM_GUARD_CODE` to this file. Set `PC_REMEMBER_PROMPT_VALUES=0` to disable this cache, or set `PC_PROMPT_CACHE_FILE` to move it. The VPS target can also be detected from this optional Git config:
 
 ```bash
 git config steamcmd-servers.vpsSshTarget "<ssh_user>@<vps_host>"
@@ -156,6 +156,8 @@ VPS_RSYNC_PATH="sudo rsync"
 PC_RSYNC_DELETE=1
 PC_RSYNC_COMPRESS=1
 PC_RSYNC_EXTRA_ARGS=""
+PC_PROMPT_CACHE_FILE="$HOME/.steamcmd-servers-pc.env"
+PC_REMEMBER_PROMPT_VALUES=1
 
 ASSETTO_CORSA_ENABLED=1
 ASSETTO_CORSA_LOCAL_DIR="$HOME/steamcmd-servers/apps/assetto-corsa"
