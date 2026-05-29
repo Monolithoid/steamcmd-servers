@@ -9,6 +9,108 @@ IFS=$'\n\t'
 # =============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_CONFIG_FILE="${SCRIPT_DIR}/updateGaming.env"
+CONFIG_FILE_WAS_SET=0
+
+if [[ -n "${CONFIG_FILE:-}" ]]; then
+  CONFIG_FILE_WAS_SET=1
+else
+  CONFIG_FILE="${DEFAULT_CONFIG_FILE}"
+fi
+
+remember_config_overrides() {
+  local variable_name=""
+  local value_name=""
+  local flag_name=""
+
+  for variable_name in "$@"; do
+    value_name="CONFIG_ORIGINAL_${variable_name}"
+    flag_name="CONFIG_ORIGINAL_${variable_name}_WAS_SET"
+
+    if [[ -n "${!variable_name+x}" ]]; then
+      printf -v "${flag_name}" '%s' "1"
+      printf -v "${value_name}" '%s' "${!variable_name}"
+    else
+      printf -v "${flag_name}" '%s' "0"
+    fi
+  done
+}
+
+restore_config_overrides() {
+  local variable_name=""
+  local value_name=""
+  local flag_name=""
+
+  for variable_name in "$@"; do
+    value_name="CONFIG_ORIGINAL_${variable_name}"
+    flag_name="CONFIG_ORIGINAL_${variable_name}_WAS_SET"
+
+    if [[ "${!flag_name:-0}" == "1" ]]; then
+      printf -v "${variable_name}" '%s' "${!value_name}"
+    fi
+  done
+}
+
+load_config_file() {
+  local config_file="$1"
+
+  if [[ -f "${config_file}" ]]; then
+    # shellcheck disable=SC1090
+    source "${config_file}"
+    return 0
+  fi
+
+  if [[ ${CONFIG_FILE_WAS_SET} -eq 1 ]]; then
+    fail "Config file not found: ${config_file}"
+    return 1
+  fi
+
+  return 0
+}
+
+step() {
+  echo
+  printf '==> %s\n' "$1"
+}
+
+ok() {
+  printf '  [OK] %s\n' "$1"
+}
+
+warn() {
+  printf '  [WARN] %s\n' "$1"
+}
+
+fail() {
+  printf '  [FAIL] %s\n' "$1"
+}
+
+info() {
+  printf '  [INFO] %s\n' "$1"
+}
+
+CONFIG_VARIABLES=(
+  STEAMCMD_BIN
+  LOG_DIR
+  SERVER_OWNER
+  RUST_ENABLED
+  STARRUPTURE_ENABLED
+  ABIOTIC_FACTOR_ENABLED
+  RUST_INSTALL_DIR
+  STARRUPTURE_INSTALL_DIR
+  ABIOTIC_FACTOR_INSTALL_DIR
+  NITROX_ENABLED
+  NITROX_RELEASE_REPO
+  NITROX_VERSION
+  NITROX_ARCH
+  NITROX_INSTALL_DIR
+  NITROX_OWNER
+  SUBNAUTICA_INSTALL_DIR
+)
+
+remember_config_overrides "${CONFIG_VARIABLES[@]}"
+load_config_file "${CONFIG_FILE}" || exit $?
+restore_config_overrides "${CONFIG_VARIABLES[@]}"
 
 STEAMCMD_BIN="${STEAMCMD_BIN:-steamcmd}"
 LOG_DIR="${LOG_DIR:-/tmp/steamcmd-updates}"
@@ -31,27 +133,6 @@ NITROX_OWNER="${NITROX_OWNER:-${SERVER_OWNER}}"
 SUBNAUTICA_INSTALL_DIR="${SUBNAUTICA_INSTALL_DIR:-/opt/gaming/subnautica}"
 
 mkdir -p "${LOG_DIR}"
-
-step() {
-  echo
-  printf '==> %s\n' "$1"
-}
-
-ok() {
-  printf '  [OK] %s\n' "$1"
-}
-
-warn() {
-  printf '  [WARN] %s\n' "$1"
-}
-
-fail() {
-  printf '  [FAIL] %s\n' "$1"
-}
-
-info() {
-  printf '  [INFO] %s\n' "$1"
-}
 
 require_command() {
   local command_name="$1"

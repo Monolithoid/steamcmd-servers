@@ -8,6 +8,115 @@ IFS=$'\n\t'
 # Author      : Monolithoid
 # =============================================================================
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_CONFIG_FILE="${SCRIPT_DIR}/updateGaming.env"
+CONFIG_FILE_WAS_SET=0
+
+if [[ -n "${CONFIG_FILE:-}" ]]; then
+  CONFIG_FILE_WAS_SET=1
+else
+  CONFIG_FILE="${DEFAULT_CONFIG_FILE}"
+fi
+
+remember_config_overrides() {
+  local variable_name=""
+  local value_name=""
+  local flag_name=""
+
+  for variable_name in "$@"; do
+    value_name="CONFIG_ORIGINAL_${variable_name}"
+    flag_name="CONFIG_ORIGINAL_${variable_name}_WAS_SET"
+
+    if [[ -n "${!variable_name+x}" ]]; then
+      printf -v "${flag_name}" '%s' "1"
+      printf -v "${value_name}" '%s' "${!variable_name}"
+    else
+      printf -v "${flag_name}" '%s' "0"
+    fi
+  done
+}
+
+restore_config_overrides() {
+  local variable_name=""
+  local value_name=""
+  local flag_name=""
+
+  for variable_name in "$@"; do
+    value_name="CONFIG_ORIGINAL_${variable_name}"
+    flag_name="CONFIG_ORIGINAL_${variable_name}_WAS_SET"
+
+    if [[ "${!flag_name:-0}" == "1" ]]; then
+      printf -v "${variable_name}" '%s' "${!value_name}"
+    fi
+  done
+}
+
+load_config_file() {
+  local config_file="$1"
+
+  if [[ -f "${config_file}" ]]; then
+    # shellcheck disable=SC1090
+    source "${config_file}"
+    return 0
+  fi
+
+  if [[ ${CONFIG_FILE_WAS_SET} -eq 1 ]]; then
+    fail "Config file not found: ${config_file}"
+    return 1
+  fi
+
+  return 0
+}
+
+step() {
+  echo
+  printf '==> %s\n' "$1"
+}
+
+ok() {
+  printf '  [OK] %s\n' "$1"
+}
+
+warn() {
+  printf '  [WARN] %s\n' "$1"
+}
+
+fail() {
+  printf '  [FAIL] %s\n' "$1"
+}
+
+info() {
+  printf '  [INFO] %s\n' "$1"
+}
+
+CONFIG_VARIABLES=(
+  STEAMCMD_BIN
+  LOG_DIR
+  PC_STEAM_APPS_DIR
+  VPS_SSH_TARGET
+  VPS_SSH_PORT
+  VPS_BASE_DIR
+  VPS_OWNER
+  VPS_SUDO
+  VPS_RSYNC_PATH
+  PC_RSYNC_DELETE
+  PC_RSYNC_COMPRESS
+  PC_RSYNC_EXTRA_ARGS
+  ASSETTO_CORSA_ENABLED
+  SUBNAUTICA_ENABLED
+  ASSETTO_CORSA_LOCAL_DIR
+  SUBNAUTICA_LOCAL_DIR
+  ASSETTO_CORSA_REMOTE_DIR
+  SUBNAUTICA_REMOTE_DIR
+  STEAM_LOGIN
+  STEAM_PASSWORD
+  STEAM_GUARD_CODE
+)
+
+remember_config_overrides "${CONFIG_VARIABLES[@]}"
+load_config_file "${CONFIG_FILE}" || exit $?
+restore_config_overrides "${CONFIG_VARIABLES[@]}"
+
 STEAMCMD_BIN="${STEAMCMD_BIN:-steamcmd}"
 LOG_DIR="${LOG_DIR:-${HOME}/steamcmd-servers/logs}"
 PC_STEAM_APPS_DIR="${PC_STEAM_APPS_DIR:-${HOME}/steamcmd-servers/apps}"
@@ -34,27 +143,6 @@ SUBNAUTICA_REMOTE_DIR="${SUBNAUTICA_REMOTE_DIR:-${VPS_BASE_DIR}/subnautica}"
 
 mkdir -p "${LOG_DIR}" "${PC_STEAM_APPS_DIR}"
 
-step() {
-  echo
-  printf '==> %s\n' "$1"
-}
-
-ok() {
-  printf '  [OK] %s\n' "$1"
-}
-
-warn() {
-  printf '  [WARN] %s\n' "$1"
-}
-
-fail() {
-  printf '  [FAIL] %s\n' "$1"
-}
-
-info() {
-  printf '  [INFO] %s\n' "$1"
-}
-
 require_command() {
   local command_name="$1"
 
@@ -68,6 +156,71 @@ require_command() {
 
 slugify() {
   printf '%s' "$1" | tr '[:upper:] ' '[:lower:]-'
+}
+
+is_interactive() {
+  [[ -t 0 && -t 1 ]]
+}
+
+read_config_value() {
+  local variable_name="$1"
+  local prompt="$2"
+  local secret="${3:-0}"
+  local entered_value=""
+
+  if [[ -n "${!variable_name:-}" ]]; then
+    return 0
+  fi
+
+  if ! is_interactive; then
+    return 1
+  fi
+
+  if [[ "${secret}" == "1" ]]; then
+    printf '%s: ' "${prompt}"
+    read -r -s entered_value
+    printf '\n'
+  else
+    printf '%s: ' "${prompt}"
+    read -r entered_value
+  fi
+
+  if [[ -z "${entered_value}" ]]; then
+    return 1
+  fi
+
+  printf -v "${variable_name}" '%s' "${entered_value}"
+  return 0
+}
+
+detect_vps_target() {
+  local detected_target=""
+
+  if [[ -n "${VPS_SSH_TARGET}" ]]; then
+    return 0
+  fi
+
+  if ! command -v git >/dev/null 2>&1; then
+    return 1
+  fi
+
+  detected_target="$(git config --get steamcmd-servers.vpsSshTarget || true)"
+
+  if [[ -z "${detected_target}" ]]; then
+    return 1
+  fi
+
+  VPS_SSH_TARGET="${detected_target}"
+  info "Detected VPS_SSH_TARGET from git config: ${VPS_SSH_TARGET}"
+  return 0
+}
+
+prompt_for_missing_settings() {
+  detect_vps_target || true
+
+  read_config_value STEAM_LOGIN "Steam login" 0 || true
+  read_config_value STEAM_PASSWORD "Steam password" 1 || true
+  read_config_value VPS_SSH_TARGET "VPS SSH target (user@example.org)" 0 || true
 }
 
 require_account() {
@@ -317,6 +470,7 @@ main() {
   local failed=0
 
   step "Updating account-bound apps locally, then copying them to the VPS"
+  prompt_for_missing_settings
 
   total=$((total + 1))
   if run_target "${ASSETTO_CORSA_ENABLED}" "Assetto Corsa Dedicated Server" "302550" "${ASSETTO_CORSA_LOCAL_DIR}" "${ASSETTO_CORSA_REMOTE_DIR}" "windows"; then

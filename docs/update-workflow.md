@@ -41,28 +41,36 @@ If SteamCMD is installed somewhere else, override `STEAMCMD_BIN`:
 STEAMCMD_BIN=/usr/games/steamcmd ./vps/updateGaming.sh
 ```
 
-### VPS environment overrides
+### VPS configuration overrides
 
-Common overrides:
+Common overrides can be placed in `vps/updateGaming.env` (copy `vps/updateGaming.env.example` first), which the script sources automatically before applying defaults:
 
 ```bash
-export LOG_DIR=/var/log/steamcmd-updates
-export SERVER_OWNER=1000:1000
+cp vps/updateGaming.env.example vps/updateGaming.env
+$EDITOR vps/updateGaming.env
+./vps/updateGaming.sh
+```
 
-export RUST_ENABLED=1
-export RUST_INSTALL_DIR=/opt/gaming/rust
+The config file uses plain assignment syntax without `export`:
 
-export STARRUPTURE_ENABLED=1
-export STARRUPTURE_INSTALL_DIR=/opt/gaming/starrupture
+```bash
+LOG_DIR=/var/log/steamcmd-updates
+SERVER_OWNER=1000:1000
 
-export ABIOTIC_FACTOR_ENABLED=1
-export ABIOTIC_FACTOR_INSTALL_DIR=/opt/gaming/abioticfactor
+RUST_ENABLED=1
+RUST_INSTALL_DIR=/opt/gaming/rust
 
-export NITROX_ENABLED=1
-export NITROX_VERSION=latest
-export NITROX_ARCH=x64
-export NITROX_INSTALL_DIR=/opt/gaming/subnautica-nitrox
-export SUBNAUTICA_INSTALL_DIR=/opt/gaming/subnautica
+STARRUPTURE_ENABLED=1
+STARRUPTURE_INSTALL_DIR=/opt/gaming/starrupture
+
+ABIOTIC_FACTOR_ENABLED=1
+ABIOTIC_FACTOR_INSTALL_DIR=/opt/gaming/abioticfactor
+
+NITROX_ENABLED=1
+NITROX_VERSION=latest
+NITROX_ARCH=x64
+NITROX_INSTALL_DIR=/opt/gaming/subnautica-nitrox
+SUBNAUTICA_INSTALL_DIR=/opt/gaming/subnautica
 ```
 
 Set a target to `0` to skip it:
@@ -90,20 +98,33 @@ Default targets:
 | Assetto Corsa Dedicated Server | `302550` | Steam account | Windows | `~/steamcmd-servers/apps/assetto-corsa` | `/opt/gaming/assetto-corsa` |
 | Subnautica | `264710` | Steam account | Windows | `~/steamcmd-servers/apps/subnautica` | `/opt/gaming/subnautica` |
 
-Run it on the PC:
+Run it on the PC with a local config file (recommended, because no exported variables are needed before execution):
 
 ```bash
-export STEAM_LOGIN="<steam_user>"
-export STEAM_PASSWORD="<steam_password>"
-export VPS_SSH_TARGET="<ssh_user>@<vps_host>"
+cp pc/updateGaming.env.example pc/updateGaming.env
+$EDITOR pc/updateGaming.env
 ./pc/updateGaming.sh
+```
+
+For one-off runs, the required values can still be provided inline:
+
+```bash
+STEAM_LOGIN="<steam_user>" \
+STEAM_PASSWORD="<steam_password>" \
+VPS_SSH_TARGET="<ssh_user>@<vps_host>" \
+./pc/updateGaming.sh
+```
+
+If `STEAM_LOGIN`, `STEAM_PASSWORD`, or `VPS_SSH_TARGET` is missing and the script is attached to a terminal, it asks for the missing value. The VPS target can also be detected from this optional Git config:
+
+```bash
+git config steamcmd-servers.vpsSshTarget "<ssh_user>@<vps_host>"
 ```
 
 If Steam Guard asks for a one-time code, rerun with:
 
 ```bash
-export STEAM_GUARD_CODE="<one_time_code>"
-./pc/updateGaming.sh
+STEAM_GUARD_CODE="<one_time_code>" ./pc/updateGaming.sh
 ```
 
 ### PC prerequisites
@@ -117,32 +138,32 @@ The PC needs:
 
 The default remote copy uses `sudo rsync` on the VPS so that files can be written under `/opt/gaming`. Configure passwordless sudo for `rsync`, or change the remote path to a directory writable by your SSH user.
 
-### PC environment overrides
+### PC configuration overrides
 
-Common overrides:
+Common overrides can be placed in `pc/updateGaming.env` (copy `pc/updateGaming.env.example` first), which the script sources automatically before applying defaults:
 
 ```bash
-export PC_STEAM_APPS_DIR="$HOME/steamcmd-servers/apps"
-export LOG_DIR="$HOME/steamcmd-servers/logs"
+PC_STEAM_APPS_DIR="$HOME/steamcmd-servers/apps"
+LOG_DIR="$HOME/steamcmd-servers/logs"
 
-export VPS_SSH_TARGET="gaming@example.org"
-export VPS_SSH_PORT=22
-export VPS_BASE_DIR=/opt/gaming
-export VPS_OWNER=1000:1000
-export VPS_SUDO=sudo
-export VPS_RSYNC_PATH="sudo rsync"
+VPS_SSH_TARGET="gaming@example.org"
+VPS_SSH_PORT=22
+VPS_BASE_DIR=/opt/gaming
+VPS_OWNER=1000:1000
+VPS_SUDO=sudo
+VPS_RSYNC_PATH="sudo rsync"
 
-export PC_RSYNC_DELETE=1
-export PC_RSYNC_COMPRESS=1
-export PC_RSYNC_EXTRA_ARGS=""
+PC_RSYNC_DELETE=1
+PC_RSYNC_COMPRESS=1
+PC_RSYNC_EXTRA_ARGS=""
 
-export ASSETTO_CORSA_ENABLED=1
-export ASSETTO_CORSA_LOCAL_DIR="$HOME/steamcmd-servers/apps/assetto-corsa"
-export ASSETTO_CORSA_REMOTE_DIR=/opt/gaming/assetto-corsa
+ASSETTO_CORSA_ENABLED=1
+ASSETTO_CORSA_LOCAL_DIR="$HOME/steamcmd-servers/apps/assetto-corsa"
+ASSETTO_CORSA_REMOTE_DIR=/opt/gaming/assetto-corsa
 
-export SUBNAUTICA_ENABLED=1
-export SUBNAUTICA_LOCAL_DIR="$HOME/steamcmd-servers/apps/subnautica"
-export SUBNAUTICA_REMOTE_DIR=/opt/gaming/subnautica
+SUBNAUTICA_ENABLED=1
+SUBNAUTICA_LOCAL_DIR="$HOME/steamcmd-servers/apps/subnautica"
+SUBNAUTICA_REMOTE_DIR=/opt/gaming/subnautica
 ```
 
 Set `PC_RSYNC_DELETE=0` if you want rsync to avoid deleting files that exist only on the VPS.
@@ -176,22 +197,22 @@ Default openings:
 | Abiotic Factor | `7777/udp`, `27015/udp` | `ABIOTIC_FACTOR_FIREWALL_ENABLED` |
 | Subnautica Nitrox | `11000/udp`, `11000/tcp` | `NITROX_FIREWALL_ENABLED` |
 
-Common overrides:
+Common overrides can be placed in `vps/configureGaming.env` (copy `vps/configureGaming.env.example` first):
 
 ```bash
-export RUST_SERVER_PORT=28015
-export RUST_RCON_PORT=28016
-export RUST_QUERY_PORT=28017
+RUST_SERVER_PORT=28015
+RUST_RCON_PORT=28016
+RUST_QUERY_PORT=28017
 
-export ASSETTO_CORSA_GAME_PORT=9600
-export ASSETTO_CORSA_HTTP_PORT=8081
+ASSETTO_CORSA_GAME_PORT=9600
+ASSETTO_CORSA_HTTP_PORT=8081
 
-export STARRUPTURE_GAME_PORT=7777
+STARRUPTURE_GAME_PORT=7777
 
-export ABIOTIC_FACTOR_GAME_PORT=7777
-export ABIOTIC_FACTOR_QUERY_PORT=27015
+ABIOTIC_FACTOR_GAME_PORT=7777
+ABIOTIC_FACTOR_QUERY_PORT=27015
 
-export NITROX_GAME_PORT=11000
+NITROX_GAME_PORT=11000
 ```
 
 Set a toggle variable to `0` to skip that game group. For example:
@@ -229,5 +250,5 @@ ASSETTO_CORSA_FIREWALL_ENABLED=0 sudo ./vps/configureGaming.sh
 
 - Keep Steam credentials on the PC side only.
 - Prefer SSH keys for the VPS copy step.
-- Avoid committing `.env` files containing Steam credentials.
+- Avoid committing local config files containing Steam credentials; `pc/updateGaming.env`, `vps/updateGaming.env`, and `vps/configureGaming.env` are ignored by Git.
 - The scripts print log file paths but do not intentionally print the Steam password.
