@@ -35,10 +35,11 @@ flowchart LR
     end
 
     linux_core --> rust
+    linux_core --> subnautica_nitrox
     wine_core --> assetto
     wine_core --> starrupture
     wine_core --> abioticfactor
-    subnautica_nitrox -.-> dotnet_runtime[.NET 9 runtime]
+    subnautica_nitrox -. adds .-> dotnet_runtime[.NET 9 runtime]
 ```
 
 ## Volumes and network access
@@ -97,7 +98,7 @@ steamcmd \
 
 ### Subnautica Nitrox Server
 
-Nitrox is not distributed through SteamCMD. This image is runtime-only: install or update the Nitrox Linux release manually on the host, then mount it into `/opt/nitrox`. A legal Subnautica installation must also be mounted read-only into `/subnautica`.
+Nitrox is not distributed through SteamCMD. This image derives from `monolithoid/steamcmd-linux-core`, adds the .NET runtime required by Nitrox, and remains runtime-only: install or update the Nitrox Linux release manually on the host, then mount it into `/opt/nitrox`. A legal Subnautica installation must also be mounted read-only into `/subnautica`.
 
 ```bash
 sudo mkdir -p /opt/gaming/subnautica-nitrox

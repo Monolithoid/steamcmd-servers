@@ -2,7 +2,7 @@
 
 Dedicated Subnautica multiplayer server using the Nitrox mod.
 
-This image is runtime-only: it downloads nothing at startup. Install or update the Linux Nitrox release manually on the host, mount it into `/opt/nitrox`, then the container launches `Nitrox.Server.Subnautica` with your mounted Subnautica installation.
+This image derives from `monolithoid/steamcmd-linux-core`, adds the .NET runtime required by Nitrox, and remains runtime-only: it downloads nothing at startup. Install or update the Linux Nitrox release manually on the host, mount it into `/opt/nitrox`, then the container launches `Nitrox.Server.Subnautica` with your mounted Subnautica installation.
 
 ## Quick start
 
