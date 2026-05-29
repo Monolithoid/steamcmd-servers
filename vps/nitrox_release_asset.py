@@ -1,56 +1,49 @@
 #!/usr/bin/env python3
-"""Print the Linux x64 Nitrox ZIP asset URL from a GitHub release payload."""
+
+"""Select the Linux Nitrox release asset to download."""
+
+from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
-
-def is_linux_x64_zip(asset_name: str) -> bool:
-    normalized_name = asset_name.lower()
-
-    if "linux" not in normalized_name:
-        return False
-
-    if "x64" not in normalized_name and "amd64" not in normalized_name:
-        return False
-
-    if not normalized_name.endswith(".zip"):
-        return False
-
-    return True
-
-
-def find_download_url(metadata_path: Path) -> str:
-    with metadata_path.open("r", encoding="utf-8") as metadata_file:
-        release = json.load(metadata_file)
-
-    for asset in release.get("assets", []):
-        asset_name = asset.get("name", "")
-        download_url = asset.get("browser_download_url", "")
-
-        if not download_url:
-            continue
-
-        if is_linux_x64_zip(asset_name):
-            return download_url
-
-    return ""
-
-
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("Usage: nitrox_release_asset.py <github-release-json>", file=sys.stderr)
+    if len(sys.argv) != 3:
+        print("Usage: nitrox_release_asset.py <release.json> <arch>", file=sys.stderr)
         return 2
 
-    download_url = find_download_url(Path(sys.argv[1]))
+    release_source = sys.argv[1]
+    arch = sys.argv[2].lower()
 
-    if not download_url:
-        return 1
+    if release_source == "-":
+        release = json.loads(sys.stdin.read())
+    else:
+        release_path = Path(release_source)
+        release = json.loads(release_path.read_text(encoding="utf-8"))
+    tag_name = str(release.get("tag_name") or release.get("name") or "").strip()
+    assets = release.get("assets") or []
 
-    print(download_url)
-    return 0
+    pattern = re.compile(rf"linux.*{re.escape(arch)}.*\.zip$", re.IGNORECASE)
 
+    for asset in assets:
+        name = str(asset.get("name") or "")
+        download_url = str(asset.get("browser_download_url") or "")
+
+        if pattern.search(name) and download_url:
+            print(tag_name)
+            print(name)
+            print(download_url)
+            return 0
+
+    asset_names = ", ".join(str(asset.get("name") or "?") for asset in assets)
+    print(
+        f"No Linux {arch} zip asset found in release {tag_name}. "
+        f"Available assets: {asset_names}",
+        file=sys.stderr,
+    )
+    return 1
 
 if __name__ == "__main__":
     raise SystemExit(main())

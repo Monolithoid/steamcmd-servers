@@ -2,7 +2,7 @@
 
 Dedicated Subnautica multiplayer server using the Nitrox mod.
 
-This image derives from `monolithoid/steamcmd-linux-core`, adds the .NET runtime required by Nitrox, and remains runtime-only: it downloads nothing at startup. Install or update the Linux Nitrox release manually on the host, mount it into `/opt/nitrox`, then the container launches `Nitrox.Server.Subnautica` with your mounted Subnautica installation.
+This image derives from `monolithoid/steamcmd-linux-core`, adds the .NET runtime required by Nitrox, and remains runtime-only: it downloads nothing at startup. Copy a legal Subnautica Steam installation manually from your PC to the host, install or update the Linux Nitrox release on the host, then mount both folders into the container.
 
 ## Quick start
 
@@ -26,7 +26,30 @@ The mounted directory should contain `Subnautica_Data`.
 
 Install Nitrox manually on the host into the folder mounted as `/opt/nitrox`. The extracted folder must contain `Nitrox.Server.Subnautica` or `Nitrox.Server.Subnautica.dll`.
 
-## Nitrox manual install/update command
+Subnautica itself is not downloaded with SteamCMD by this project. Treat it like Assetto Corsa: copy the installed Steam game directory from your PC to `/opt/gaming/subnautica` on the VPS.
+
+## Nitrox install/update on the VPS
+
+The VPS update helper can download the official Linux x64 Nitrox release from GitHub and sync it into the mounted Nitrox folder:
+
+```bash
+NITROX_ENABLED=1 ./vps/updateGaming.sh
+```
+
+Host prerequisites for this update path: `curl`, `python3`, `unzip`, and `rsync`.
+
+Useful overrides:
+
+```bash
+NITROX_VERSION=1.8.1.0 \
+NITROX_INSTALL_DIR=/opt/gaming/subnautica-nitrox \
+SUBNAUTICA_INSTALL_DIR=/opt/gaming/subnautica \
+./vps/updateGaming.sh
+```
+
+The updater preserves `Nitrox/saves/` and `Nitrox/server.cfg` while replacing the Nitrox binaries and support files.
+
+## Nitrox manual fallback command
 
 Run this directly on the host, replacing `1.8.1.0` and `x64` if needed:
 

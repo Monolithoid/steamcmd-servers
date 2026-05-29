@@ -4,102 +4,75 @@ IFS=$'\n\t'
 
 # =============================================================================
 # Script      : update-games.sh
-# Purpose     : Update dedicated server binaries with SteamCMD and host-side
-#               prerequisites.
+# Purpose     : Update host-managed game server files
 # Author      : Monolithoid
 # =============================================================================
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 STEAMCMD_BIN="${STEAMCMD_BIN:-steamcmd}"
 LOG_DIR="${LOG_DIR:-/tmp/steamcmd-updates}"
 
-SUBNAUTICA_ENABLED="${SUBNAUTICA_ENABLED:-1}"
-SUBNAUTICA_INSTALL_DIR="${SUBNAUTICA_INSTALL_DIR:-/opt/gaming/subnautica}"
-SUBNAUTICA_NITROX_DIR="${SUBNAUTICA_NITROX_DIR:-/opt/gaming/subnautica-nitrox}"
-SUBNAUTICA_NITROX_VERSION="${SUBNAUTICA_NITROX_VERSION:-latest}"
-SUBNAUTICA_STEAM_USER="${SUBNAUTICA_STEAM_USER:-${STEAM_USER:-}}"
-SUBNAUTICA_STEAM_PASSWORD="${SUBNAUTICA_STEAM_PASSWORD:-${STEAM_PASSWORD:-}}"
-SUBNAUTICA_STEAM_GUARD_CODE="${SUBNAUTICA_STEAM_GUARD_CODE:-${STEAM_GUARD_CODE:-}}"
+NITROX_ENABLED="${NITROX_ENABLED:-1}"
 NITROX_RELEASE_REPO="${NITROX_RELEASE_REPO:-SubnauticaNitrox/Nitrox}"
-NITROX_OWNER_UID="${NITROX_OWNER_UID:-1000}"
-NITROX_OWNER_GID="${NITROX_OWNER_GID:-1000}"
-NITROX_TMP_DIR="${NITROX_TMP_DIR:-/tmp/nitrox-update}"
-NITROX_KEEP_ARCHIVE="${NITROX_KEEP_ARCHIVE:-0}"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-NITROX_ASSET_HELPER="${NITROX_ASSET_HELPER:-${SCRIPT_DIR}/nitrox_release_asset.py}"
+NITROX_VERSION="${NITROX_VERSION:-latest}"
+NITROX_ARCH="${NITROX_ARCH:-x64}"
+NITROX_INSTALL_DIR="${NITROX_INSTALL_DIR:-/opt/gaming/subnautica-nitrox}"
+NITROX_OWNER="${NITROX_OWNER:-1000:1000}"
+SUBNAUTICA_INSTALL_DIR="${SUBNAUTICA_INSTALL_DIR:-/opt/gaming/subnautica}"
 
 mkdir -p "${LOG_DIR}"
 
 # -----------------------------------------------------------------------------
-# Display helpers
+# Output helpers
 # -----------------------------------------------------------------------------
 
 step() {
   echo
-  echo "╭────────────────────────────────────────────────────────────"
-  printf "│ %s\n" "$1"
-  echo "╰────────────────────────────────────────────────────────────"
+  printf '==> %s\n' "$1"
 }
 
 ok() {
-  printf "  ✓ %s\n" "$1"
+  printf '  [OK] %s\n' "$1"
 }
 
 warn() {
-  printf "  ! %s\n" "$1"
+  printf '  [WARN] %s\n' "$1"
 }
 
 fail() {
-  printf "  ✗ %s\n" "$1"
+  printf '  [FAIL] %s\n' "$1"
 }
 
 info() {
-  printf "  • %s\n" "$1"
+  printf '  [INFO] %s\n' "$1"
 }
 
 # -----------------------------------------------------------------------------
 # Generic helpers
 # -----------------------------------------------------------------------------
 
-command_exists() {
-  local command_name="$1"
-
-  command -v "${command_name}" >/dev/null 2>&1
-}
-
 require_command() {
   local command_name="$1"
 
-  if command_exists "${command_name}"; then
+  if command -v "${command_name}" >/dev/null 2>&1; then
     return 0
   fi
 
-  fail "Missing required command: ${command_name}"
+  fail "Required command not found: ${command_name}"
   return 1
 }
 
-is_enabled() {
-  local value="$1"
-  local normalized_value=""
+make_temp_dir() {
+  mktemp -d "${TMPDIR:-/tmp}/gaming-update.XXXXXXXXXX"
+}
 
-  normalized_value="$(printf '%s' "${value}" | tr '[:upper:]' '[:lower:]')"
+cleanup_temp_dir() {
+  local temp_dir="${1:-}"
 
-  if [[ "${normalized_value}" == "1" ]]; then
-    return 0
+  if [[ -n "${temp_dir}" && -d "${temp_dir}" ]]; then
+    rm -rf "${temp_dir}"
   fi
-
-  if [[ "${normalized_value}" == "true" ]]; then
-    return 0
-  fi
-
-  if [[ "${normalized_value}" == "yes" ]]; then
-    return 0
-  fi
-
-  if [[ "${normalized_value}" == "on" ]]; then
-    return 0
-  fi
-
-  return 1
 }
 
 # -----------------------------------------------------------------------------
@@ -116,17 +89,17 @@ analyze_steamcmd_log() {
   fi
 
   if grep -qi "ERROR! Failed to install app" "${log_file}"; then
-    fail "SteamCMD failed to install the app"
+    fail "SteamCMD failed to install the application"
     return 11
   fi
 
   if grep -qi "state is 0x6" "${log_file}"; then
-    fail "Known SteamCMD error: state is 0x6 after update"
+    fail "Known SteamCMD transient error: state is 0x6 after update"
     return 12
   fi
 
   if grep -qi "Invalid platform" "${log_file}"; then
-    fail "Invalid platform for this app"
+    fail "Invalid platform for this application"
     return 13
   fi
 
@@ -141,7 +114,8 @@ analyze_steamcmd_log() {
   fi
 
   if grep -q "Success! App '${app_id}' fully installed" "${log_file}"; then
-    ok "Installation/update completed successfully"
+    ok "Install/update completed"
+
     return 0
   fi
 
@@ -165,55 +139,10 @@ analyze_steamcmd_log() {
 }
 
 # -----------------------------------------------------------------------------
-# SteamCMD login helpers
+# SteamCMD game update
 # -----------------------------------------------------------------------------
 
-build_login_arguments() {
-  local login_mode="$1"
-  local game_name="$2"
-  local -n output_arguments_ref="$3"
-
-  output_arguments_ref=()
-
-  if [[ "${login_mode}" == "anonymous" ]]; then
-    output_arguments_ref+=(+login anonymous)
-    return 0
-  fi
-
-  if [[ "${login_mode}" != "account" ]]; then
-    fail "Unsupported login mode for ${game_name}: ${login_mode}"
-    return 1
-  fi
-
-  if [[ "${game_name}" == "Subnautica" ]]; then
-    if [[ -z "${SUBNAUTICA_STEAM_USER}" ]]; then
-      fail "Subnautica requires SUBNAUTICA_STEAM_USER or STEAM_USER because the base game is not an anonymous dedicated server app"
-      return 1
-    fi
-
-    if [[ -z "${SUBNAUTICA_STEAM_PASSWORD}" ]]; then
-      fail "Subnautica requires SUBNAUTICA_STEAM_PASSWORD or STEAM_PASSWORD"
-      return 1
-    fi
-
-    output_arguments_ref+=(+login "${SUBNAUTICA_STEAM_USER}" "${SUBNAUTICA_STEAM_PASSWORD}")
-
-    if [[ -n "${SUBNAUTICA_STEAM_GUARD_CODE}" ]]; then
-      output_arguments_ref+=("${SUBNAUTICA_STEAM_GUARD_CODE}")
-    fi
-
-    return 0
-  fi
-
-  fail "No credential mapping is configured for ${game_name}"
-  return 1
-}
-
-# -----------------------------------------------------------------------------
-# Game update
-# -----------------------------------------------------------------------------
-
-update_game() {
+update_steam_game() {
   local name="$1"
   local app_id="$2"
   local install_dir="$3"
@@ -221,36 +150,44 @@ update_game() {
   local login_mode="${5:-anonymous}"
 
   local timestamp=""
-  local safe_name=""
   local log_file=""
   local rc=0
   local analysis_rc=0
-  local login_arguments=()
+  local steamcmd_args=()
 
   timestamp="$(date '+%Y%m%d-%H%M%S')"
   safe_name="$(printf '%s' "${name}" | tr '[:upper:] ' '[:lower:]-')"
   log_file="${LOG_DIR}/${safe_name}-${app_id}-${timestamp}.log"
 
-  step "Updating: ${name}"
+  step "Updating SteamCMD app: ${name}"
 
-  info "App ID      : ${app_id}"
-  info "Platform    : ${platform}"
-  info "Directory   : ${install_dir}"
-  info "Login mode  : ${login_mode}"
-  info "Log         : ${log_file}"
+  info "App ID       : ${app_id}"
+  info "Platform     : ${platform}"
+  info "Install dir  : ${install_dir}"
+  info "Login mode   : ${login_mode}"
+  info "Log          : ${log_file}"
 
-  require_command "${STEAMCMD_BIN}" || return 2
-  build_login_arguments "${login_mode}" "${name}" login_arguments || return 2
   mkdir -p "${install_dir}"
 
-  "${STEAMCMD_BIN}" \
-    +@sSteamCmdForcePlatformType "${platform}" \
-    +force_install_dir "${install_dir}" \
-    "${login_arguments[@]}" \
-    +app_update "${app_id}" validate \
-    +quit \
-    2>&1 | tee "${log_file}"
+  steamcmd_args=(
+    +@sSteamCmdForcePlatformType "${platform}"
+    +force_install_dir "${install_dir}"
+  )
 
+  if [[ "${login_mode}" == "account" ]]; then
+    if [[ -z "${STEAM_LOGIN:-}" || -z "${STEAM_PASSWORD:-}" ]]; then
+      fail "STEAM_LOGIN and STEAM_PASSWORD are required for ${name}"
+      return 30
+    fi
+
+    steamcmd_args+=(+login "${STEAM_LOGIN}" "${STEAM_PASSWORD}")
+  else
+    steamcmd_args+=(+login anonymous)
+  fi
+
+  steamcmd_args+=(+app_update "${app_id}" validate +quit)
+
+  "${STEAMCMD_BIN}" "${steamcmd_args[@]}" 2>&1 | tee "${log_file}"
   rc=${PIPESTATUS[0]}
 
   if [[ ${rc} -ne 0 ]]; then
@@ -259,115 +196,137 @@ update_game() {
     return "${rc}"
   fi
 
-  analyze_steamcmd_log "${app_id}" "${log_file}"
-  analysis_rc=$?
-
-  return "${analysis_rc}"
-}
-
-# -----------------------------------------------------------------------------
-# Nitrox prerequisites for the Subnautica server
+# Nitrox update
 # -----------------------------------------------------------------------------
 
 get_nitrox_release_api_url() {
-  if [[ "${SUBNAUTICA_NITROX_VERSION}" == "latest" ]]; then
+  if [[ "${NITROX_VERSION}" == "latest" ]]; then
     printf 'https://api.github.com/repos/%s/releases/latest\n' "${NITROX_RELEASE_REPO}"
     return 0
   fi
 
-  printf 'https://api.github.com/repos/%s/releases/tags/%s\n' "${NITROX_RELEASE_REPO}" "${SUBNAUTICA_NITROX_VERSION}"
+  printf 'https://api.github.com/repos/%s/releases/tags/%s\n' "${NITROX_RELEASE_REPO}" "${NITROX_VERSION}"
 }
 
-get_nitrox_download_url() {
-  local release_api_url=""
-  local metadata_file=""
-  local download_url=""
-
-  release_api_url="$(get_nitrox_release_api_url)"
-  metadata_file="${NITROX_TMP_DIR}/nitrox-release.json"
-
-  mkdir -p "${NITROX_TMP_DIR}" || return 1
-  rm -f "${metadata_file}"
-
-  curl -fsSL "${release_api_url}" -o "${metadata_file}" || return 1
-
-  download_url="$(python3 "${NITROX_ASSET_HELPER}" "${metadata_file}")"
-
-  if [[ -z "${download_url}" ]]; then
-    fail "Unable to find a Linux x64 Nitrox ZIP asset in the GitHub release"
-    return 1
-  fi
-
-  printf '%s\n' "${download_url}"
-}
-
-prepare_nitrox_directory() {
-  mkdir -p "${SUBNAUTICA_NITROX_DIR}"
-}
-
-install_nitrox_release() {
-  local download_url=""
-  local archive_path=""
+update_nitrox() {
+  local temp_dir=""
+  local release_json=""
+  local zip_file=""
   local extract_dir=""
+  local api_url=""
+  local asset_info=""
+  local release_tag=""
+  local asset_name=""
+  local download_url=""
+  local rc=0
 
-  step "Updating Nitrox prerequisites"
+  step "Updating Subnautica Nitrox"
 
-  info "Nitrox directory : ${SUBNAUTICA_NITROX_DIR}"
-  info "Nitrox version   : ${SUBNAUTICA_NITROX_VERSION}"
-  info "Owner            : ${NITROX_OWNER_UID}:${NITROX_OWNER_GID}"
-
-  require_command curl || return 2
-  require_command unzip || return 2
-  require_command python3 || return 2
-  require_command rsync || return 2
-
-  prepare_nitrox_directory || return 1
-
-  download_url="$(get_nitrox_download_url)" || return 1
-  archive_path="${NITROX_TMP_DIR}/nitrox-linux-x64.zip"
-  extract_dir="${NITROX_TMP_DIR}/extract"
-
-  info "Nitrox archive   : ${download_url}"
-
-  rm -rf "${extract_dir}" || return 1
-  mkdir -p "${extract_dir}" || return 1
-
-  curl -fL "${download_url}" -o "${archive_path}" || return 1
-  unzip -oq "${archive_path}" -d "${extract_dir}" || return 1
-
-  rsync -a --delete "${extract_dir}/" "${SUBNAUTICA_NITROX_DIR}/" || return 1
-
-  if [[ -f "${SUBNAUTICA_NITROX_DIR}/Nitrox.Server.Subnautica" ]]; then
-    chmod +x "${SUBNAUTICA_NITROX_DIR}/Nitrox.Server.Subnautica" || return 1
-  fi
-
-  chown -R "${NITROX_OWNER_UID}:${NITROX_OWNER_GID}" "${SUBNAUTICA_NITROX_DIR}" || return 1
-
-  if ! is_enabled "${NITROX_KEEP_ARCHIVE}"; then
-    rm -f "${archive_path}" || return 1
-  fi
-
-  rm -rf "${extract_dir}" || return 1
-  ok "Nitrox prerequisites are installed"
-}
-
-update_subnautica_server() {
-  if ! is_enabled "${SUBNAUTICA_ENABLED}"; then
-    warn "Subnautica update is disabled by SUBNAUTICA_ENABLED=${SUBNAUTICA_ENABLED}"
+  if [[ "${NITROX_ENABLED}" != "1" ]]; then
+    warn "Nitrox update is disabled (NITROX_ENABLED=${NITROX_ENABLED})"
     return 0
   fi
 
-  update_game "Subnautica" "264710" "${SUBNAUTICA_INSTALL_DIR}" "windows" "account" || return $?
-  install_nitrox_release
+  require_command curl || return 40
+  require_command python3 || return 40
+  require_command unzip || return 40
+  require_command rsync || return 40
+
+  if [[ ! -d "${SUBNAUTICA_INSTALL_DIR}/Subnautica_Data" ]]; then
+    warn "Subnautica_Data was not found under ${SUBNAUTICA_INSTALL_DIR}"
+    warn "Copy the Steam game files there manually before starting the server."
+  fi
+
+  temp_dir="$(make_temp_dir)" || return 41
+  release_json="${temp_dir}/nitrox-release.json"
+  zip_file="${temp_dir}/nitrox.zip"
+  extract_dir="${temp_dir}/extract"
+
+  api_url="$(get_nitrox_release_api_url)"
+  info "Release API  : ${api_url}"
+  info "Install dir  : ${NITROX_INSTALL_DIR}"
+  info "Owner        : ${NITROX_OWNER}"
+
+  if ! curl -fsSL \
+    -H "Accept: application/vnd.github+json" \
+    -H "User-Agent: steamcmd-servers-update-script" \
+    "${api_url}" \
+    -o "${release_json}"; then
+    cleanup_temp_dir "${temp_dir}"
+    fail "Unable to fetch the Nitrox release metadata"
+    return 42
+  fi
+
+  if ! asset_info="$(python3 "${SCRIPT_DIR}/nitrox_release_asset.py" "${release_json}" "${NITROX_ARCH}")"; then
+    cleanup_temp_dir "${temp_dir}"
+    fail "Unable to select a Nitrox Linux ${NITROX_ARCH} release asset"
+    return 43
+  fi
+
+  release_tag="$(printf '%s\n' "${asset_info}" | sed -n '1p')"
+  asset_name="$(printf '%s\n' "${asset_info}" | sed -n '2p')"
+  download_url="$(printf '%s\n' "${asset_info}" | sed -n '3p')"
+
+  info "Release      : ${release_tag}"
+  info "Asset        : ${asset_name}"
+
+  if ! curl -fL "${download_url}" -o "${zip_file}"; then
+    cleanup_temp_dir "${temp_dir}"
+    fail "Unable to download ${asset_name}"
+    return 44
+  fi
+
+  mkdir -p "${extract_dir}" "${NITROX_INSTALL_DIR}"
+
+  if ! unzip -q "${zip_file}" -d "${extract_dir}"; then
+    cleanup_temp_dir "${temp_dir}"
+    fail "Unable to extract ${asset_name}"
+    return 45
+  fi
+
+  rsync -a \
+    --exclude 'Nitrox/saves/' \
+    --exclude 'Nitrox/saves/***' \
+    --exclude 'Nitrox/server.cfg' \
+    "${extract_dir}/" \
+    "${NITROX_INSTALL_DIR}/"
+  rc=$?
+
+  if [[ ${rc} -ne 0 ]]; then
+    cleanup_temp_dir "${temp_dir}"
+    fail "Unable to sync Nitrox files"
+    return "${rc}"
+  fi
+
+  if [[ -f "${NITROX_INSTALL_DIR}/Nitrox.Server.Subnautica" ]]; then
+    if ! chmod +x "${NITROX_INSTALL_DIR}/Nitrox.Server.Subnautica"; then
+      cleanup_temp_dir "${temp_dir}"
+      fail "Unable to mark Nitrox.Server.Subnautica as executable"
+      return 46
+    fi
+  fi
+
+  if ! chown -R "${NITROX_OWNER}" "${NITROX_INSTALL_DIR}"; then
+    cleanup_temp_dir "${temp_dir}"
+    fail "Unable to set ownership on ${NITROX_INSTALL_DIR}"
+    return 47
+  fi
+
+  cleanup_temp_dir "${temp_dir}"
+  ok "Nitrox ${release_tag} is installed in ${NITROX_INSTALL_DIR}"
+  return 0
 }
 
 # -----------------------------------------------------------------------------
-# Games to update with SteamCMD
+# Update targets
 # Format:
 #   "Name|AppID|Directory|Platform|LoginMode"
+#
+# Subnautica itself is intentionally not listed here. Copy the Steam game folder
+# manually to SUBNAUTICA_INSTALL_DIR, then let the Nitrox target update the mod.
 # -----------------------------------------------------------------------------
 
-GAMES=(
+STEAM_GAMES=(
   "StarRupture|3809400|/opt/gaming/starrupture|windows|anonymous"
   "Abiotic Factor|2857200|/opt/gaming/abioticfactor|windows|anonymous"
 )
@@ -388,14 +347,16 @@ main() {
   local platform=""
   local login_mode=""
 
-  step "SteamCMD game server updates"
+  step "Updating host-managed game server files"
 
-  for game in "${GAMES[@]}"; do
+  for game in "${STEAM_GAMES[@]}"; do
     IFS='|' read -r name app_id install_dir platform login_mode <<< "${game}"
 
     total=$((total + 1))
 
-    if update_game "${name}" "${app_id}" "${install_dir}" "${platform}" "${login_mode}"; then
+
+    if update_steam_game "${name}" "${app_id}" "${install_dir}" "${platform}" "${login_mode}"; then
+
       success=$((success + 1))
     else
       failed=$((failed + 1))
@@ -404,7 +365,7 @@ main() {
 
   total=$((total + 1))
 
-  if update_subnautica_server; then
+  if update_nitrox; then
     success=$((success + 1))
   else
     failed=$((failed + 1))
@@ -412,11 +373,11 @@ main() {
 
   step "Summary"
 
-  info "Games processed : ${total}"
-  ok "Successful      : ${success}"
+  info "Targets processed : ${total}"
+  ok "Successful        : ${success}"
 
   if [[ ${failed} -gt 0 ]]; then
-    fail "Failed          : ${failed}"
+    fail "Failed            : ${failed}"
     return 1
   fi
 
