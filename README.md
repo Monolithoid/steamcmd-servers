@@ -122,6 +122,31 @@ export VPS_RSYNC_PATH="sudo rsync"
 export PC_RSYNC_DELETE="1"
 ```
 
+
+### VPS firewall configuration script
+
+`vps/configureGaming.sh` opens the default game ports on a VPS that uses UFW. It is separate from the update scripts because firewall changes are host configuration, not app updates.
+
+Default openings:
+
+- Rust: `28015/udp`, `28016/udp`, `28017/tcp`.
+- Assetto Corsa: `9600/tcp`, `9600/udp`, `8081/tcp`.
+- StarRupture: `7777/udp`.
+- Abiotic Factor: `7777/udp`, `27015/udp`.
+- Subnautica Nitrox: `11000/udp`, `11000/tcp`.
+
+Preview the commands without changing the firewall:
+
+```bash
+DRY_RUN=1 ./vps/configureGaming.sh
+```
+
+Apply the rules on the VPS:
+
+```bash
+sudo ./vps/configureGaming.sh
+```
+
 ## Manual SteamCMD commands per included game
 
 ### Rust (AppID `258550`)

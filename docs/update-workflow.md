@@ -147,6 +147,59 @@ export SUBNAUTICA_REMOTE_DIR=/opt/gaming/subnautica
 
 Set `PC_RSYNC_DELETE=0` if you want rsync to avoid deleting files that exist only on the VPS.
 
+
+## VPS firewall configuration
+
+Script: `vps/configureGaming.sh`
+
+The firewall script opens the default ports exposed by the included `docker-compose.yml` examples. It currently supports UFW. Run it on the VPS after installing UFW and before starting public servers.
+
+Preview mode:
+
+```bash
+DRY_RUN=1 ./vps/configureGaming.sh
+```
+
+Apply mode:
+
+```bash
+sudo ./vps/configureGaming.sh
+```
+
+Default openings:
+
+| Target | Ports | Toggle variable |
+| --- | --- | --- |
+| Rust | `28015/udp`, `28016/udp`, `28017/tcp` | `RUST_FIREWALL_ENABLED` |
+| Assetto Corsa | `9600/tcp`, `9600/udp`, `8081/tcp` | `ASSETTO_CORSA_FIREWALL_ENABLED` |
+| StarRupture | `7777/udp` | `STARRUPTURE_FIREWALL_ENABLED` |
+| Abiotic Factor | `7777/udp`, `27015/udp` | `ABIOTIC_FACTOR_FIREWALL_ENABLED` |
+| Subnautica Nitrox | `11000/udp`, `11000/tcp` | `NITROX_FIREWALL_ENABLED` |
+
+Common overrides:
+
+```bash
+export RUST_SERVER_PORT=28015
+export RUST_RCON_PORT=28016
+export RUST_QUERY_PORT=28017
+
+export ASSETTO_CORSA_GAME_PORT=9600
+export ASSETTO_CORSA_HTTP_PORT=8081
+
+export STARRUPTURE_GAME_PORT=7777
+
+export ABIOTIC_FACTOR_GAME_PORT=7777
+export ABIOTIC_FACTOR_QUERY_PORT=27015
+
+export NITROX_GAME_PORT=11000
+```
+
+Set a toggle variable to `0` to skip that game group. For example:
+
+```bash
+ASSETTO_CORSA_FIREWALL_ENABLED=0 sudo ./vps/configureGaming.sh
+```
+
 ## Recommended order
 
 1. Run the PC updater for account-bound apps:
@@ -164,7 +217,13 @@ Set `PC_RSYNC_DELETE=0` if you want rsync to avoid deleting files that exist onl
    ./vps/updateGaming.sh
    ```
 
-3. Restart the relevant containers so they use the refreshed files.
+3. Configure the VPS firewall when needed:
+
+   ```bash
+   sudo ./vps/configureGaming.sh
+   ```
+
+4. Restart the relevant containers so they use the refreshed files.
 
 ## Security notes
 
