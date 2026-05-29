@@ -15,6 +15,11 @@ USER root
 
 COPY --from=dotnet-runtime /usr/share/dotnet /usr/share/dotnet
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      libicu72 \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN mkdir -p "${NITROX_WORKDIR}" "${SUBNAUTICA_INSTALLATION_PATH}" && \
     ln -sf /usr/share/dotnet/dotnet /usr/bin/dotnet && \
     chown -R steam:steam "${NITROX_WORKDIR}" "${SUBNAUTICA_INSTALLATION_PATH}"

@@ -95,3 +95,4 @@ A ready-to-use example is provided in `games/subnautica-nitrox/docker-compose.ym
 - Make sure the mounted Nitrox work directory is writable by UID/GID `1000` (`steam` in the container):
   `sudo chown -R 1000:1000 /opt/gaming/subnautica-nitrox`.
 - The Subnautica installation can be mounted read-only; the server only needs to read the game assets.
+- The image installs Debian's ICU runtime library (`libicu72`) because the copied .NET runtime needs ICU for globalization support. If you build a custom variant from a different Debian release, install the matching `libicu` package instead of disabling globalization unless you explicitly want invariant culture behavior.
