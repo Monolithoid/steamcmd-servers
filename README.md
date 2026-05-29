@@ -49,36 +49,27 @@ flowchart LR
 
 ## Update strategy
 
-### Linux servers (`steamcmd-linux-core`)
+The Docker images are runtime-focused: server files live on the host and are mounted into the containers. The recommended update workflow is now split by authentication type:
 
-SteamCMD can still be used in-container, but recommended operations remain manual-first.
+- **VPS side**: run `vps/updateGaming.sh` directly on the VPS for anonymous SteamCMD dedicated-server apps and host prerequisites such as Nitrox.
+- **PC side**: run `pc/updateGaming.sh` on a trusted PC for Steam apps that require an account, then copy the updated files to the VPS through SSH/rsync.
 
-### Wine servers (`steamcmd-wine-core`)
+See the full operational guide in [`docs/update-workflow.md`](docs/update-workflow.md).
 
-Wine core is now a **runtime-only** image:
+### VPS update script
 
-- no SteamCMD update at container startup,
-- no in-container download logic,
-- container only launches an already installed Windows dedicated server.
+`vps/updateGaming.sh` updates host-mounted files that do not require storing Steam account credentials on the VPS. It writes SteamCMD logs to `/tmp/steamcmd-updates` by default.
 
+Default targets:
 
-## VPS update script
+- Rust dedicated server (`/opt/gaming/rust`) with anonymous SteamCMD login.
+- StarRupture dedicated server (`/opt/gaming/starrupture`) with anonymous SteamCMD login.
+- Abiotic Factor dedicated server (`/opt/gaming/abioticfactor`) with anonymous SteamCMD login.
+- Nitrox Linux x64 prerequisite (`/opt/gaming/subnautica-nitrox`) from GitHub releases.
 
-`vps/updateGaming.sh` updates the host-mounted server binaries used by the runtime-only images. The script output is in English and writes SteamCMD logs to `/tmp/steamcmd-updates` by default.
-
-Included targets:
-
-- StarRupture dedicated server (`/opt/gaming/starrupture`)
-- Abiotic Factor dedicated server (`/opt/gaming/abioticfactor`)
-- Subnautica base game files (`/opt/gaming/subnautica`) plus Nitrox Linux x64 prerequisites (`/opt/gaming/subnautica-nitrox`)
-
-Subnautica is not an anonymous Steam dedicated server app. Configure an account that owns the game before running the script:
+Example:
 
 ```bash
-export SUBNAUTICA_STEAM_USER="<steam_user>"
-export SUBNAUTICA_STEAM_PASSWORD="<steam_password>"
-# Optional when Steam Guard requires a one-time code:
-export SUBNAUTICA_STEAM_GUARD_CODE="<steam_guard_code>"
 ./vps/updateGaming.sh
 ```
 
@@ -86,15 +77,75 @@ Useful overrides:
 
 ```bash
 export LOG_DIR="/var/log/steamcmd-updates"
-export SUBNAUTICA_ENABLED="1"
+export SERVER_OWNER="1000:1000"
+export RUST_ENABLED="1"
+export STARRUPTURE_ENABLED="1"
+export ABIOTIC_FACTOR_ENABLED="1"
+export NITROX_ENABLED="1"
+export NITROX_VERSION="latest"
 export SUBNAUTICA_INSTALL_DIR="/opt/gaming/subnautica"
-export SUBNAUTICA_NITROX_DIR="/opt/gaming/subnautica-nitrox"
-export SUBNAUTICA_NITROX_VERSION="latest"
-export NITROX_OWNER_UID="1000"
-export NITROX_OWNER_GID="1000"
+./vps/updateGaming.sh
 ```
 
-Set `SUBNAUTICA_ENABLED=0` to skip Subnautica and Nitrox on hosts that only run the dedicated-server SteamCMD targets.
+### PC update and copy script
+
+`pc/updateGaming.sh` updates account-bound Steam apps locally and synchronizes the updated app directories to the VPS over SSH.
+
+Default targets:
+
+- Assetto Corsa Dedicated Server (`302550`) copied to `/opt/gaming/assetto-corsa`.
+- Subnautica (`264710`) copied to `/opt/gaming/subnautica` for the Nitrox server.
+
+Example:
+
+```bash
+export STEAM_LOGIN="<steam_user>"
+export STEAM_PASSWORD="<steam_password>"
+export VPS_SSH_TARGET="<ssh_user>@<vps_host>"
+./pc/updateGaming.sh
+```
+
+If Steam Guard requires a one-time code:
+
+```bash
+export STEAM_GUARD_CODE="<steam_guard_code>"
+./pc/updateGaming.sh
+```
+
+Common copy overrides:
+
+```bash
+export VPS_SSH_PORT="22"
+export VPS_BASE_DIR="/opt/gaming"
+export VPS_OWNER="1000:1000"
+export VPS_RSYNC_PATH="sudo rsync"
+export PC_RSYNC_DELETE="1"
+```
+
+
+### VPS firewall configuration script
+
+`vps/configureGaming.sh` opens the default game ports on a VPS that uses UFW. It is separate from the update scripts because firewall changes are host configuration, not app updates.
+
+Default openings:
+
+- Rust: `28015/udp`, `28016/udp`, `28017/tcp`.
+- Assetto Corsa: `9600/tcp`, `9600/udp`, `8081/tcp`.
+- StarRupture: `7777/udp`.
+- Abiotic Factor: `7777/udp`, `27015/udp`.
+- Subnautica Nitrox: `11000/udp`, `11000/tcp`.
+
+Preview the commands without changing the firewall:
+
+```bash
+DRY_RUN=1 ./vps/configureGaming.sh
+```
+
+Apply the rules on the VPS:
+
+```bash
+sudo ./vps/configureGaming.sh
+```
 
 ## Manual SteamCMD commands per included game
 
@@ -109,6 +160,8 @@ steamcmd \
 ```
 
 ### Assetto Corsa Dedicated Server (AppID `302550`)
+
+Use the PC updater for this account-bound app, or run manually on a trusted machine:
 
 ```bash
 steamcmd \
@@ -125,24 +178,40 @@ steamcmd \
 steamcmd \
   +@sSteamCmdForcePlatformType windows \
   +force_install_dir /opt/gaming/starrupture \
-  +login <steam_user> <steam_password> \
+  +login anonymous \
   +app_update 3809400 validate \
+  +quit
+```
+
+### Abiotic Factor Dedicated Server (AppID `2857200`)
+
+```bash
+steamcmd \
+  +@sSteamCmdForcePlatformType windows \
+  +force_install_dir /opt/gaming/abioticfactor \
+  +login anonymous \
+  +app_update 2857200 validate \
   +quit
 ```
 
 ### Subnautica Nitrox Server
 
-Nitrox is not distributed through SteamCMD. This image derives from `monolithoid/steamcmd-linux-core`, adds the .NET runtime required by Nitrox, and remains runtime-only. Copy a legal Subnautica Steam installation manually from your PC to `/opt/gaming/subnautica`, then install or update the Linux Nitrox release on the VPS and mount it into `/opt/nitrox`.
+Nitrox is not distributed through SteamCMD. This image derives from `monolithoid/steamcmd-linux-core`, adds the .NET runtime required by Nitrox, and remains runtime-only. Use the PC updater to copy a legal Subnautica Steam installation to `/opt/gaming/subnautica`, then use the VPS updater to install or update the Linux Nitrox release in `/opt/gaming/subnautica-nitrox`.
 
-Preferred VPS update path:
+Preferred workflow:
 
 ```bash
+# On the PC
+STEAM_LOGIN=<steam_user> \
+STEAM_PASSWORD=<steam_password> \
+VPS_SSH_TARGET=<ssh_user>@<vps_host> \
+./pc/updateGaming.sh
+
+# On the VPS
 NITROX_ENABLED=1 ./vps/updateGaming.sh
 ```
 
-Host prerequisites for the Nitrox updater are `curl`, `python3`, `unzip`, and `rsync`.
-
-To pin a specific Nitrox release:
+Host prerequisites for the Nitrox updater are `curl`, `python3`, `unzip`, and `rsync`. To pin a specific Nitrox release:
 
 ```bash
 NITROX_VERSION=1.8.1.0 ./vps/updateGaming.sh
@@ -150,19 +219,6 @@ NITROX_VERSION=1.8.1.0 ./vps/updateGaming.sh
 
 The updater preserves `Nitrox/saves/` and `Nitrox/server.cfg`.
 
-Manual fallback:
-
-```bash
-sudo mkdir -p /opt/gaming/subnautica-nitrox
-cd /opt/gaming/subnautica-nitrox
-sudo curl -fL \
-  https://github.com/SubnauticaNitrox/Nitrox/releases/download/1.8.1.0/Nitrox_1.8.1.0_linux_x64.zip \
-  -o nitrox.zip
-sudo unzip -o nitrox.zip
-sudo chmod +x Nitrox.Server.Subnautica
-sudo chown -R 1000:1000 /opt/gaming/subnautica-nitrox
-```
-
 ```bash
 docker run -d \
   --name subnautica-nitrox \
@@ -173,33 +229,3 @@ docker run -d \
   -v /opt/gaming/subnautica-nitrox:/opt/nitrox \
   monolithoid/subnautica-nitrox-server:latest
 ```
-
-### Subnautica Nitrox Server
-
-Nitrox is not distributed through SteamCMD. This image derives from `monolithoid/steamcmd-linux-core`, adds the .NET runtime required by Nitrox, and remains runtime-only: install or update the Nitrox Linux release manually on the host, then mount it into `/opt/nitrox`. A legal Subnautica installation must also be mounted read-only into `/subnautica`.
-
-```bash
-sudo mkdir -p /opt/gaming/subnautica-nitrox
-cd /opt/gaming/subnautica-nitrox
-sudo curl -fL \
-  https://github.com/SubnauticaNitrox/Nitrox/releases/download/1.8.1.0/Nitrox_1.8.1.0_linux_x64.zip \
-  -o nitrox.zip
-sudo unzip -o nitrox.zip
-sudo chmod +x Nitrox.Server.Subnautica
-sudo chown -R 1000:1000 /opt/gaming/subnautica-nitrox
-```
-
-```bash
-docker run -d \
-  --name subnautica-nitrox \
-  -p 11000:11000/udp \
-  -p 11000:11000/tcp \
-  -e SUBNAUTICA_INSTALLATION_PATH=/subnautica \
-  -v /opt/gaming/subnautica:/subnautica:ro \
-  -v /opt/gaming/subnautica-nitrox:/opt/nitrox \
-  monolithoid/subnautica-nitrox-server:latest
-```
-
-### Abiotic Factor Dedicated Server
-
-This image is runtime-only on Wine core. Install/update server binaries manually on host, then mount them into `/opt/server`.

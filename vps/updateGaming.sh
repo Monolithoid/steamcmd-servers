@@ -3,8 +3,8 @@ set -uo pipefail
 IFS=$'\n\t'
 
 # =============================================================================
-# Script      : update-games.sh
-# Purpose     : Update host-managed game server files
+# Script      : updateGaming.sh
+# Purpose     : Update VPS-hosted anonymous dedicated-server apps and prerequisites
 # Author      : Monolithoid
 # =============================================================================
 
@@ -12,20 +12,25 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 STEAMCMD_BIN="${STEAMCMD_BIN:-steamcmd}"
 LOG_DIR="${LOG_DIR:-/tmp/steamcmd-updates}"
+SERVER_OWNER="${SERVER_OWNER:-1000:1000}"
+
+RUST_ENABLED="${RUST_ENABLED:-1}"
+STARRUPTURE_ENABLED="${STARRUPTURE_ENABLED:-1}"
+ABIOTIC_FACTOR_ENABLED="${ABIOTIC_FACTOR_ENABLED:-1}"
+
+RUST_INSTALL_DIR="${RUST_INSTALL_DIR:-/opt/gaming/rust}"
+STARRUPTURE_INSTALL_DIR="${STARRUPTURE_INSTALL_DIR:-/opt/gaming/starrupture}"
+ABIOTIC_FACTOR_INSTALL_DIR="${ABIOTIC_FACTOR_INSTALL_DIR:-/opt/gaming/abioticfactor}"
 
 NITROX_ENABLED="${NITROX_ENABLED:-1}"
 NITROX_RELEASE_REPO="${NITROX_RELEASE_REPO:-SubnauticaNitrox/Nitrox}"
 NITROX_VERSION="${NITROX_VERSION:-latest}"
 NITROX_ARCH="${NITROX_ARCH:-x64}"
 NITROX_INSTALL_DIR="${NITROX_INSTALL_DIR:-/opt/gaming/subnautica-nitrox}"
-NITROX_OWNER="${NITROX_OWNER:-1000:1000}"
+NITROX_OWNER="${NITROX_OWNER:-${SERVER_OWNER}}"
 SUBNAUTICA_INSTALL_DIR="${SUBNAUTICA_INSTALL_DIR:-/opt/gaming/subnautica}"
 
 mkdir -p "${LOG_DIR}"
-
-# -----------------------------------------------------------------------------
-# Output helpers
-# -----------------------------------------------------------------------------
 
 step() {
   echo
@@ -47,10 +52,6 @@ fail() {
 info() {
   printf '  [INFO] %s\n' "$1"
 }
-
-# -----------------------------------------------------------------------------
-# Generic helpers
-# -----------------------------------------------------------------------------
 
 require_command() {
   local command_name="$1"
@@ -75,9 +76,25 @@ cleanup_temp_dir() {
   fi
 }
 
-# -----------------------------------------------------------------------------
-# SteamCMD log analysis
-# -----------------------------------------------------------------------------
+slugify() {
+  printf '%s' "$1" | tr '[:upper:] ' '[:lower:]-'
+}
+
+set_directory_owner() {
+  local directory="$1"
+  local owner="$2"
+
+  if [[ -z "${owner}" ]]; then
+    return 0
+  fi
+
+  if ! chown -R "${owner}" "${directory}"; then
+    fail "Unable to set ownership ${owner} on ${directory}"
+    return 1
+  fi
+
+  return 0
+}
 
 analyze_steamcmd_log() {
   local app_id="$1"
@@ -115,7 +132,6 @@ analyze_steamcmd_log() {
 
   if grep -q "Success! App '${app_id}' fully installed" "${log_file}"; then
     ok "Install/update completed"
-
     return 0
   fi
 
@@ -138,25 +154,20 @@ analyze_steamcmd_log() {
   return 20
 }
 
-# -----------------------------------------------------------------------------
-# SteamCMD game update
-# -----------------------------------------------------------------------------
-
 update_steam_game() {
   local name="$1"
   local app_id="$2"
   local install_dir="$3"
-  local platform="${4:-windows}"
-  local login_mode="${5:-anonymous}"
-
+  local platform="$4"
+  local login_mode="$5"
   local timestamp=""
   local log_file=""
+  local safe_name=""
   local rc=0
-  local analysis_rc=0
   local steamcmd_args=()
 
   timestamp="$(date '+%Y%m%d-%H%M%S')"
-  safe_name="$(printf '%s' "${name}" | tr '[:upper:] ' '[:lower:]-')"
+  safe_name="$(slugify "${name}")"
   log_file="${LOG_DIR}/${safe_name}-${app_id}-${timestamp}.log"
 
   step "Updating SteamCMD app: ${name}"
@@ -167,22 +178,26 @@ update_steam_game() {
   info "Login mode   : ${login_mode}"
   info "Log          : ${log_file}"
 
+  require_command "${STEAMCMD_BIN}" || return 31
+
   mkdir -p "${install_dir}"
 
   steamcmd_args=(
-    +@sSteamCmdForcePlatformType "${platform}"
     +force_install_dir "${install_dir}"
   )
 
-  if [[ "${login_mode}" == "account" ]]; then
-    if [[ -z "${STEAM_LOGIN:-}" || -z "${STEAM_PASSWORD:-}" ]]; then
-      fail "STEAM_LOGIN and STEAM_PASSWORD are required for ${name}"
-      return 30
-    fi
+  if [[ "${platform}" != "linux" ]]; then
+    steamcmd_args=(
+      +@sSteamCmdForcePlatformType "${platform}"
+      "${steamcmd_args[@]}"
+    )
+  fi
 
-    steamcmd_args+=(+login "${STEAM_LOGIN}" "${STEAM_PASSWORD}")
-  else
+  if [[ "${login_mode}" == "anonymous" ]]; then
     steamcmd_args+=(+login anonymous)
+  else
+    fail "The VPS updater only supports anonymous SteamCMD targets"
+    return 30
   fi
 
   steamcmd_args+=(+app_update "${app_id}" validate +quit)
@@ -196,8 +211,16 @@ update_steam_game() {
     return "${rc}"
   fi
 
-# Nitrox update
-# -----------------------------------------------------------------------------
+  analyze_steamcmd_log "${app_id}" "${log_file}"
+  rc=$?
+
+  if [[ ${rc} -ne 0 ]]; then
+    return "${rc}"
+  fi
+
+  set_directory_owner "${install_dir}" "${SERVER_OWNER}"
+  return $?
+}
 
 get_nitrox_release_api_url() {
   if [[ "${NITROX_VERSION}" == "latest" ]]; then
@@ -220,7 +243,7 @@ update_nitrox() {
   local download_url=""
   local rc=0
 
-  step "Updating Subnautica Nitrox"
+  step "Updating Subnautica Nitrox prerequisite"
 
   if [[ "${NITROX_ENABLED}" != "1" ]]; then
     warn "Nitrox update is disabled (NITROX_ENABLED=${NITROX_ENABLED})"
@@ -234,7 +257,7 @@ update_nitrox() {
 
   if [[ ! -d "${SUBNAUTICA_INSTALL_DIR}/Subnautica_Data" ]]; then
     warn "Subnautica_Data was not found under ${SUBNAUTICA_INSTALL_DIR}"
-    warn "Copy the Steam game files there manually before starting the server."
+    warn "Update and copy Subnautica from the PC before starting the Nitrox server."
   fi
 
   temp_dir="$(make_temp_dir)" || return 41
@@ -306,9 +329,8 @@ update_nitrox() {
     fi
   fi
 
-  if ! chown -R "${NITROX_OWNER}" "${NITROX_INSTALL_DIR}"; then
+  if ! set_directory_owner "${NITROX_INSTALL_DIR}" "${NITROX_OWNER}"; then
     cleanup_temp_dir "${temp_dir}"
-    fail "Unable to set ownership on ${NITROX_INSTALL_DIR}"
     return 47
   fi
 
@@ -317,54 +339,51 @@ update_nitrox() {
   return 0
 }
 
-# -----------------------------------------------------------------------------
-# Update targets
-# Format:
-#   "Name|AppID|Directory|Platform|LoginMode"
-#
-# Subnautica itself is intentionally not listed here. Copy the Steam game folder
-# manually to SUBNAUTICA_INSTALL_DIR, then let the Nitrox target update the mod.
-# -----------------------------------------------------------------------------
+run_target() {
+  local enabled="$1"
+  local name="$2"
+  local app_id="$3"
+  local install_dir="$4"
+  local platform="$5"
+  local login_mode="$6"
 
-STEAM_GAMES=(
-  "StarRupture|3809400|/opt/gaming/starrupture|windows|anonymous"
-  "Abiotic Factor|2857200|/opt/gaming/abioticfactor|windows|anonymous"
-)
+  if [[ "${enabled}" != "1" ]]; then
+    warn "Skipping ${name} (enabled=${enabled})"
+    return 0
+  fi
 
-# -----------------------------------------------------------------------------
-# Main
-# -----------------------------------------------------------------------------
+  update_steam_game "${name}" "${app_id}" "${install_dir}" "${platform}" "${login_mode}"
+}
 
 main() {
   local total=0
   local success=0
   local failed=0
 
-  local game=""
-  local name=""
-  local app_id=""
-  local install_dir=""
-  local platform=""
-  local login_mode=""
-
-  step "Updating host-managed game server files"
-
-  for game in "${STEAM_GAMES[@]}"; do
-    IFS='|' read -r name app_id install_dir platform login_mode <<< "${game}"
-
-    total=$((total + 1))
-
-
-    if update_steam_game "${name}" "${app_id}" "${install_dir}" "${platform}" "${login_mode}"; then
-
-      success=$((success + 1))
-    else
-      failed=$((failed + 1))
-    fi
-  done
+  step "Updating VPS-managed anonymous apps and prerequisites"
 
   total=$((total + 1))
+  if run_target "${RUST_ENABLED}" "Rust Dedicated Server" "258550" "${RUST_INSTALL_DIR}" "linux" "anonymous"; then
+    success=$((success + 1))
+  else
+    failed=$((failed + 1))
+  fi
 
+  total=$((total + 1))
+  if run_target "${STARRUPTURE_ENABLED}" "StarRupture Dedicated Server" "3809400" "${STARRUPTURE_INSTALL_DIR}" "windows" "anonymous"; then
+    success=$((success + 1))
+  else
+    failed=$((failed + 1))
+  fi
+
+  total=$((total + 1))
+  if run_target "${ABIOTIC_FACTOR_ENABLED}" "Abiotic Factor Dedicated Server" "2857200" "${ABIOTIC_FACTOR_INSTALL_DIR}" "windows" "anonymous"; then
+    success=$((success + 1))
+  else
+    failed=$((failed + 1))
+  fi
+
+  total=$((total + 1))
   if update_nitrox; then
     success=$((success + 1))
   else
