@@ -114,6 +114,16 @@ $EDITOR pc/updateGaming.env
 
 Do not store Steam account credentials in `pc/updateGaming.env`. When the script is attached to a terminal, it asks for the Steam login and password at runtime, keeping those values out of the config file. SteamCMD itself does not support reusing an already-open browser or Steam client session for these downloads, so the safe fallback is the console prompt.
 
+PowerShell can start the PC updater only through a Bash-compatible environment, for example WSL or Git Bash:
+
+```powershell
+bash ./pc/updateGaming.sh
+```
+
+This does not change Steam authentication: SteamCMD still uses its own console login flow and cannot inherit a browser or desktop Steam session opened from PowerShell. Make sure `steamcmd`, `ssh`, and `rsync` are installed in the same Bash environment that runs the script.
+
+Do not copy Steam tokens, sentry files, `config.vdf`, cookies, or other cached Steam session files between machines or user profiles. Those files are bearer-style session material: copying them is fragile, can bypass the account protections you expect, and creates another secret to protect. If SteamCMD chooses to remember a trusted login on the same computer after a Steam Guard challenge, leave that cache managed by SteamCMD in that local environment instead of scripting token copies.
+
 For one-off non-interactive runs, the Steam values can still be provided inline, but this is less safe because credentials may be visible to the shell environment or process tooling:
 
 ```bash
