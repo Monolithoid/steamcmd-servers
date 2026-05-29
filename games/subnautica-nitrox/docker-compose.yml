@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  subnautica-nitrox:
+    image: monolithoid/subnautica-nitrox-server:latest
+    container_name: subnautica-nitrox
+    restart: unless-stopped
+    environment:
+      SUBNAUTICA_INSTALLATION_PATH: /subnautica
+      NITROX_WORKDIR: /opt/nitrox
+      NITROX_SAVES_DIR: /opt/nitrox/Nitrox/saves
+      SERVER_WORLD_NAME: "My World"
+      SERVER_PASSWORD: "changeme"
+      SERVER_GAMEMODE: "1"
+      SERVER_COMMANDS_ENABLED: "true"
+      SERVER_PVP_ENABLED: "false"
+      SERVER_KEEP_INVENTORY: "false"
+    volumes:
+      - /opt/gaming/subnautica:/subnautica:ro
+      - /opt/gaming/subnautica-nitrox:/opt/nitrox
+    ports:
+      - "11000:11000/udp"
+      - "11000:11000/tcp"

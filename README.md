@@ -15,6 +15,7 @@ This repo contains:
   - `monolithoid/assetto-corsa-server`
   - `monolithoid/starrupture-server`
   - `monolithoid/abioticfactor-server`
+  - `monolithoid/subnautica-nitrox-server`
 
 ## Repository dependencies (Mermaid)
 
@@ -30,12 +31,14 @@ flowchart LR
         assetto[assetto-corsa-server]
         starrupture[starrupture-server]
         abioticfactor[abioticfactor-server]
+        subnautica_nitrox[subnautica-nitrox-server]
     end
 
     linux_core --> rust
     wine_core --> assetto
     wine_core --> starrupture
     wine_core --> abioticfactor
+    subnautica_nitrox -.-> dotnet_runtime[.NET 9 runtime]
 ```
 
 ## Volumes and network access
@@ -91,6 +94,32 @@ steamcmd \
   +quit
 ```
 
+
+### Subnautica Nitrox Server
+
+Nitrox is not distributed through SteamCMD. This image is runtime-only: install or update the Nitrox Linux release manually on the host, then mount it into `/opt/nitrox`. A legal Subnautica installation must also be mounted read-only into `/subnautica`.
+
+```bash
+sudo mkdir -p /opt/gaming/subnautica-nitrox
+cd /opt/gaming/subnautica-nitrox
+sudo curl -fL \
+  https://github.com/SubnauticaNitrox/Nitrox/releases/download/1.8.1.0/Nitrox_1.8.1.0_linux_x64.zip \
+  -o nitrox.zip
+sudo unzip -o nitrox.zip
+sudo chmod +x Nitrox.Server.Subnautica
+sudo chown -R 1000:1000 /opt/gaming/subnautica-nitrox
+```
+
+```bash
+docker run -d \
+  --name subnautica-nitrox \
+  -p 11000:11000/udp \
+  -p 11000:11000/tcp \
+  -e SUBNAUTICA_INSTALLATION_PATH=/subnautica \
+  -v /opt/gaming/subnautica:/subnautica:ro \
+  -v /opt/gaming/subnautica-nitrox:/opt/nitrox \
+  monolithoid/subnautica-nitrox-server:latest
+```
 
 ### Abiotic Factor Dedicated Server
 
