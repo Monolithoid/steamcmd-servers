@@ -8,6 +8,110 @@ IFS=$'\n\t'
 # Author      : Monolithoid
 # =============================================================================
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_CONFIG_FILE="${SCRIPT_DIR}/configureGaming.env"
+CONFIG_FILE_WAS_SET=0
+
+if [[ -n "${CONFIG_FILE:-}" ]]; then
+  CONFIG_FILE_WAS_SET=1
+else
+  CONFIG_FILE="${DEFAULT_CONFIG_FILE}"
+fi
+
+remember_config_overrides() {
+  local variable_name=""
+  local value_name=""
+  local flag_name=""
+
+  for variable_name in "$@"; do
+    value_name="CONFIG_ORIGINAL_${variable_name}"
+    flag_name="CONFIG_ORIGINAL_${variable_name}_WAS_SET"
+
+    if [[ -n "${!variable_name+x}" ]]; then
+      printf -v "${flag_name}" '%s' "1"
+      printf -v "${value_name}" '%s' "${!variable_name}"
+    else
+      printf -v "${flag_name}" '%s' "0"
+    fi
+  done
+}
+
+restore_config_overrides() {
+  local variable_name=""
+  local value_name=""
+  local flag_name=""
+
+  for variable_name in "$@"; do
+    value_name="CONFIG_ORIGINAL_${variable_name}"
+    flag_name="CONFIG_ORIGINAL_${variable_name}_WAS_SET"
+
+    if [[ "${!flag_name:-0}" == "1" ]]; then
+      printf -v "${variable_name}" '%s' "${!value_name}"
+    fi
+  done
+}
+
+load_config_file() {
+  local config_file="$1"
+
+  if [[ -f "${config_file}" ]]; then
+    # shellcheck disable=SC1090
+    source "${config_file}"
+    return 0
+  fi
+
+  if [[ ${CONFIG_FILE_WAS_SET} -eq 1 ]]; then
+    fail "Config file not found: ${config_file}"
+    return 1
+  fi
+
+  return 0
+}
+
+step() {
+  echo
+  printf '==> %s\n' "$1"
+}
+
+ok() {
+  printf '  [OK] %s\n' "$1"
+}
+
+warn() {
+  printf '  [WARN] %s\n' "$1"
+}
+
+fail() {
+  printf '  [FAIL] %s\n' "$1"
+}
+
+info() {
+  printf '  [INFO] %s\n' "$1"
+}
+
+CONFIG_VARIABLES=(
+  FIREWALL_TOOL
+  DRY_RUN
+  RUST_FIREWALL_ENABLED
+  ASSETTO_CORSA_FIREWALL_ENABLED
+  STARRUPTURE_FIREWALL_ENABLED
+  ABIOTIC_FACTOR_FIREWALL_ENABLED
+  NITROX_FIREWALL_ENABLED
+  RUST_SERVER_PORT
+  RUST_RCON_PORT
+  RUST_QUERY_PORT
+  ASSETTO_CORSA_GAME_PORT
+  ASSETTO_CORSA_HTTP_PORT
+  STARRUPTURE_GAME_PORT
+  ABIOTIC_FACTOR_GAME_PORT
+  ABIOTIC_FACTOR_QUERY_PORT
+  NITROX_GAME_PORT
+)
+
+remember_config_overrides "${CONFIG_VARIABLES[@]}"
+load_config_file "${CONFIG_FILE}" || exit $?
+restore_config_overrides "${CONFIG_VARIABLES[@]}"
+
 FIREWALL_TOOL="${FIREWALL_TOOL:-ufw}"
 DRY_RUN="${DRY_RUN:-0}"
 
@@ -30,27 +134,6 @@ ABIOTIC_FACTOR_GAME_PORT="${ABIOTIC_FACTOR_GAME_PORT:-7777}"
 ABIOTIC_FACTOR_QUERY_PORT="${ABIOTIC_FACTOR_QUERY_PORT:-27015}"
 
 NITROX_GAME_PORT="${NITROX_GAME_PORT:-11000}"
-
-step() {
-  echo
-  printf '==> %s\n' "$1"
-}
-
-ok() {
-  printf '  [OK] %s\n' "$1"
-}
-
-warn() {
-  printf '  [WARN] %s\n' "$1"
-}
-
-fail() {
-  printf '  [FAIL] %s\n' "$1"
-}
-
-info() {
-  printf '  [INFO] %s\n' "$1"
-}
 
 require_command() {
   local command_name="$1"

@@ -1,1 +1,6 @@
 .vs/
+
+# Local updater configuration may contain credentials.
+pc/updateGaming.env
+vps/updateGaming.env
+vps/configureGaming.env

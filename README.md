@@ -73,17 +73,25 @@ Example:
 ./vps/updateGaming.sh
 ```
 
-Useful overrides:
+Useful overrides can be placed in `vps/updateGaming.env` (copy `vps/updateGaming.env.example` first) so you can run the script without preparing exported variables:
 
 ```bash
-export LOG_DIR="/var/log/steamcmd-updates"
-export SERVER_OWNER="1000:1000"
-export RUST_ENABLED="1"
-export STARRUPTURE_ENABLED="1"
-export ABIOTIC_FACTOR_ENABLED="1"
-export NITROX_ENABLED="1"
-export NITROX_VERSION="latest"
-export SUBNAUTICA_INSTALL_DIR="/opt/gaming/subnautica"
+cp vps/updateGaming.env.example vps/updateGaming.env
+$EDITOR vps/updateGaming.env
+./vps/updateGaming.sh
+```
+
+The same values can still be passed inline for one-off runs:
+
+```bash
+LOG_DIR="/var/log/steamcmd-updates" \
+SERVER_OWNER="1000:1000" \
+RUST_ENABLED="1" \
+STARRUPTURE_ENABLED="1" \
+ABIOTIC_FACTOR_ENABLED="1" \
+NITROX_ENABLED="1" \
+NITROX_VERSION="latest" \
+SUBNAUTICA_INSTALL_DIR="/opt/gaming/subnautica" \
 ./vps/updateGaming.sh
 ```
 
@@ -96,30 +104,43 @@ Default targets:
 - Assetto Corsa Dedicated Server (`302550`) copied to `/opt/gaming/assetto-corsa`.
 - Subnautica (`264710`) copied to `/opt/gaming/subnautica` for the Nitrox server.
 
-Example:
+Example with a local config file (recommended, because no exported variables are needed before execution):
 
 ```bash
-export STEAM_LOGIN="<steam_user>"
-export STEAM_PASSWORD="<steam_password>"
-export VPS_SSH_TARGET="<ssh_user>@<vps_host>"
+cp pc/updateGaming.env.example pc/updateGaming.env
+$EDITOR pc/updateGaming.env
 ./pc/updateGaming.sh
+```
+
+For one-off runs, the required values can still be provided inline:
+
+```bash
+STEAM_LOGIN="<steam_user>" \
+STEAM_PASSWORD="<steam_password>" \
+VPS_SSH_TARGET="<ssh_user>@<vps_host>" \
+./pc/updateGaming.sh
+```
+
+If `STEAM_LOGIN`, `STEAM_PASSWORD`, or `VPS_SSH_TARGET` is missing and the script is attached to a terminal, it asks for the missing value. The VPS target can also be detected from this optional Git config:
+
+```bash
+git config steamcmd-servers.vpsSshTarget "<ssh_user>@<vps_host>"
 ```
 
 If Steam Guard requires a one-time code:
 
 ```bash
-export STEAM_GUARD_CODE="<steam_guard_code>"
-./pc/updateGaming.sh
+STEAM_GUARD_CODE="<steam_guard_code>" ./pc/updateGaming.sh
 ```
 
-Common copy overrides:
+Common copy overrides can also go in `pc/updateGaming.env`:
 
 ```bash
-export VPS_SSH_PORT="22"
-export VPS_BASE_DIR="/opt/gaming"
-export VPS_OWNER="1000:1000"
-export VPS_RSYNC_PATH="sudo rsync"
-export PC_RSYNC_DELETE="1"
+VPS_SSH_PORT="22"
+VPS_BASE_DIR="/opt/gaming"
+VPS_OWNER="1000:1000"
+VPS_RSYNC_PATH="sudo rsync"
+PC_RSYNC_DELETE="1"
 ```
 
 
@@ -134,6 +155,8 @@ Default openings:
 - StarRupture: `7777/udp`.
 - Abiotic Factor: `7777/udp`, `27015/udp`.
 - Subnautica Nitrox: `11000/udp`, `11000/tcp`.
+
+If you need persistent firewall overrides, copy `vps/configureGaming.env.example` to `vps/configureGaming.env` and edit it before running the script.
 
 Preview the commands without changing the firewall:
 
