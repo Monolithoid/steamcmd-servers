@@ -91,9 +91,6 @@ steamcmd \
   +quit
 ```
 
-
-<<<<<<< Updated upstream
-=======
 ### Subnautica Nitrox Server
 
 Nitrox is not distributed through SteamCMD. This image derives from `monolithoid/steamcmd-linux-core`, adds the .NET runtime required by Nitrox, and remains runtime-only. Copy a legal Subnautica Steam installation manually from your PC to `/opt/gaming/subnautica`, then install or update the Linux Nitrox release on the VPS and mount it into `/opt/nitrox`.
@@ -138,7 +135,6 @@ docker run -d \
   monolithoid/subnautica-nitrox-server:latest
 ```
 
->>>>>>> Stashed changes
 ### Abiotic Factor Dedicated Server
 
 This image is runtime-only on Wine core. Install/update server binaries manually on host, then mount them into `/opt/server`.
