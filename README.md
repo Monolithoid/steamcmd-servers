@@ -61,6 +61,41 @@ Wine core is now a **runtime-only** image:
 - no in-container download logic,
 - container only launches an already installed Windows dedicated server.
 
+
+## VPS update script
+
+`vps/updateGaming.sh` updates the host-mounted server binaries used by the runtime-only images. The script output is in English and writes SteamCMD logs to `/tmp/steamcmd-updates` by default.
+
+Included targets:
+
+- StarRupture dedicated server (`/opt/gaming/starrupture`)
+- Abiotic Factor dedicated server (`/opt/gaming/abioticfactor`)
+- Subnautica base game files (`/opt/gaming/subnautica`) plus Nitrox Linux x64 prerequisites (`/opt/gaming/subnautica-nitrox`)
+
+Subnautica is not an anonymous Steam dedicated server app. Configure an account that owns the game before running the script:
+
+```bash
+export SUBNAUTICA_STEAM_USER="<steam_user>"
+export SUBNAUTICA_STEAM_PASSWORD="<steam_password>"
+# Optional when Steam Guard requires a one-time code:
+export SUBNAUTICA_STEAM_GUARD_CODE="<steam_guard_code>"
+./vps/updateGaming.sh
+```
+
+Useful overrides:
+
+```bash
+export LOG_DIR="/var/log/steamcmd-updates"
+export SUBNAUTICA_ENABLED="1"
+export SUBNAUTICA_INSTALL_DIR="/opt/gaming/subnautica"
+export SUBNAUTICA_NITROX_DIR="/opt/gaming/subnautica-nitrox"
+export SUBNAUTICA_NITROX_VERSION="latest"
+export NITROX_OWNER_UID="1000"
+export NITROX_OWNER_GID="1000"
+```
+
+Set `SUBNAUTICA_ENABLED=0` to skip Subnautica and Nitrox on hosts that only run the dedicated-server SteamCMD targets.
+
 ## Manual SteamCMD commands per included game
 
 ### Rust (AppID `258550`)
