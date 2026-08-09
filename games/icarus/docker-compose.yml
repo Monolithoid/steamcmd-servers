@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     environment:
       SERVER_EXE: "IcarusServer.exe"
-      SERVER_ARGS: "-Log -PORT=17777 -QueryPort=27015"
+      SERVER_ARGS: "-Log -SteamServerName=${STEAM_SERVER_NAME:-IcarusServer} -PORT=17777 -QueryPort=27015"
     volumes:
       - /opt/gaming/icarus:/opt/server
     ports:
