@@ -30,6 +30,7 @@ jobs:
         game:
           - abioticfactor
           - assetto-corsa
+          - icarus
           - rust
           - starrupture
           - subnautica-nitrox
