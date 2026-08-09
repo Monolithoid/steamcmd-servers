@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  icarus:
+    image: monolithoid/icarus-server:latest
+    container_name: icarus
+    restart: unless-stopped
+    environment:
+      SERVER_EXE: "IcarusServer.exe"
+      SERVER_ARGS: "-Log -PORT=17777 -QueryPort=27015"
+    volumes:
+      - /opt/gaming/icarus:/opt/server
+    ports:
+      - "17777:17777/udp"
+      - "27015:27015/udp"

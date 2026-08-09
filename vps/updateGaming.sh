@@ -96,9 +96,11 @@ CONFIG_VARIABLES=(
   RUST_ENABLED
   STARRUPTURE_ENABLED
   ABIOTIC_FACTOR_ENABLED
+  ICARUS_ENABLED
   RUST_INSTALL_DIR
   STARRUPTURE_INSTALL_DIR
   ABIOTIC_FACTOR_INSTALL_DIR
+  ICARUS_INSTALL_DIR
   NITROX_ENABLED
   NITROX_RELEASE_REPO
   NITROX_VERSION
@@ -119,10 +121,12 @@ SERVER_OWNER="${SERVER_OWNER:-1000:1000}"
 RUST_ENABLED="${RUST_ENABLED:-1}"
 STARRUPTURE_ENABLED="${STARRUPTURE_ENABLED:-1}"
 ABIOTIC_FACTOR_ENABLED="${ABIOTIC_FACTOR_ENABLED:-1}"
+ICARUS_ENABLED="${ICARUS_ENABLED:-1}"
 
 RUST_INSTALL_DIR="${RUST_INSTALL_DIR:-/opt/gaming/rust}"
 STARRUPTURE_INSTALL_DIR="${STARRUPTURE_INSTALL_DIR:-/opt/gaming/starrupture}"
 ABIOTIC_FACTOR_INSTALL_DIR="${ABIOTIC_FACTOR_INSTALL_DIR:-/opt/gaming/abioticfactor}"
+ICARUS_INSTALL_DIR="${ICARUS_INSTALL_DIR:-/opt/gaming/icarus}"
 
 NITROX_ENABLED="${NITROX_ENABLED:-1}"
 NITROX_RELEASE_REPO="${NITROX_RELEASE_REPO:-SubnauticaNitrox/Nitrox}"
@@ -459,6 +463,13 @@ main() {
 
   total=$((total + 1))
   if run_target "${ABIOTIC_FACTOR_ENABLED}" "Abiotic Factor Dedicated Server" "2857200" "${ABIOTIC_FACTOR_INSTALL_DIR}" "windows" "anonymous"; then
+    success=$((success + 1))
+  else
+    failed=$((failed + 1))
+  fi
+
+  total=$((total + 1))
+  if run_target "${ICARUS_ENABLED}" "ICARUS Dedicated Server" "2089300" "${ICARUS_INSTALL_DIR}" "windows" "anonymous"; then
     success=$((success + 1))
   else
     failed=$((failed + 1))

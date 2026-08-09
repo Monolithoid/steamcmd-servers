@@ -96,6 +96,7 @@ CONFIG_VARIABLES=(
   ASSETTO_CORSA_FIREWALL_ENABLED
   STARRUPTURE_FIREWALL_ENABLED
   ABIOTIC_FACTOR_FIREWALL_ENABLED
+  ICARUS_FIREWALL_ENABLED
   NITROX_FIREWALL_ENABLED
   RUST_SERVER_PORT
   RUST_RCON_PORT
@@ -105,6 +106,8 @@ CONFIG_VARIABLES=(
   STARRUPTURE_GAME_PORT
   ABIOTIC_FACTOR_GAME_PORT
   ABIOTIC_FACTOR_QUERY_PORT
+  ICARUS_GAME_PORT
+  ICARUS_QUERY_PORT
   NITROX_GAME_PORT
 )
 
@@ -119,6 +122,7 @@ RUST_FIREWALL_ENABLED="${RUST_FIREWALL_ENABLED:-1}"
 ASSETTO_CORSA_FIREWALL_ENABLED="${ASSETTO_CORSA_FIREWALL_ENABLED:-1}"
 STARRUPTURE_FIREWALL_ENABLED="${STARRUPTURE_FIREWALL_ENABLED:-1}"
 ABIOTIC_FACTOR_FIREWALL_ENABLED="${ABIOTIC_FACTOR_FIREWALL_ENABLED:-1}"
+ICARUS_FIREWALL_ENABLED="${ICARUS_FIREWALL_ENABLED:-1}"
 NITROX_FIREWALL_ENABLED="${NITROX_FIREWALL_ENABLED:-1}"
 
 RUST_SERVER_PORT="${RUST_SERVER_PORT:-28015}"
@@ -132,6 +136,9 @@ STARRUPTURE_GAME_PORT="${STARRUPTURE_GAME_PORT:-7777}"
 
 ABIOTIC_FACTOR_GAME_PORT="${ABIOTIC_FACTOR_GAME_PORT:-7777}"
 ABIOTIC_FACTOR_QUERY_PORT="${ABIOTIC_FACTOR_QUERY_PORT:-27015}"
+
+ICARUS_GAME_PORT="${ICARUS_GAME_PORT:-17777}"
+ICARUS_QUERY_PORT="${ICARUS_QUERY_PORT:-27015}"
 
 NITROX_GAME_PORT="${NITROX_GAME_PORT:-11000}"
 
@@ -230,6 +237,20 @@ configure_abiotic_factor_ports() {
   return 0
 }
 
+configure_icarus_ports() {
+  step "Configuring ICARUS firewall ports"
+
+  if [[ "${ICARUS_FIREWALL_ENABLED}" != "1" ]]; then
+    warn "ICARUS firewall rules are disabled (ICARUS_FIREWALL_ENABLED=${ICARUS_FIREWALL_ENABLED})"
+    return 0
+  fi
+
+  allow_ufw_port "${ICARUS_GAME_PORT}" "udp" "icarus-game" || return $?
+  allow_ufw_port "${ICARUS_QUERY_PORT}" "udp" "icarus-query" || return $?
+
+  return 0
+}
+
 configure_nitrox_ports() {
   step "Configuring Subnautica Nitrox firewall ports"
 
@@ -251,6 +272,7 @@ configure_firewall_ports() {
   configure_assetto_corsa_ports || failed=$((failed + 1))
   configure_starrupture_ports || failed=$((failed + 1))
   configure_abiotic_factor_ports || failed=$((failed + 1))
+  configure_icarus_ports || failed=$((failed + 1))
   configure_nitrox_ports || failed=$((failed + 1))
 
   if [[ ${failed} -gt 0 ]]; then

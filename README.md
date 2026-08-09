@@ -15,6 +15,7 @@ This repo contains:
   - `monolithoid/assetto-corsa-server`
   - `monolithoid/starrupture-server`
   - `monolithoid/abioticfactor-server`
+  - `monolithoid/icarus-server`
   - `monolithoid/subnautica-nitrox-server`
 
 ## Repository dependencies (Mermaid)
@@ -31,6 +32,7 @@ flowchart LR
         assetto[assetto-corsa-server]
         starrupture[starrupture-server]
         abioticfactor[abioticfactor-server]
+        icarus[icarus-server]
         subnautica_nitrox[subnautica-nitrox-server]
     end
 
@@ -39,6 +41,7 @@ flowchart LR
     wine_core --> assetto
     wine_core --> starrupture
     wine_core --> abioticfactor
+    wine_core --> icarus
     subnautica_nitrox -. adds .-> dotnet_runtime[.NET 9 runtime]
 ```
 
@@ -65,6 +68,7 @@ Default targets:
 - Rust dedicated server (`/opt/gaming/rust`) with anonymous SteamCMD login.
 - StarRupture dedicated server (`/opt/gaming/starrupture`) with anonymous SteamCMD login.
 - Abiotic Factor dedicated server (`/opt/gaming/abioticfactor`) with anonymous SteamCMD login.
+- ICARUS dedicated server (`/opt/gaming/icarus`) with anonymous SteamCMD login.
 - Nitrox Linux x64 prerequisite (`/opt/gaming/subnautica-nitrox`) from GitHub releases.
 
 Example:
@@ -89,6 +93,7 @@ SERVER_OWNER="1000:1000" \
 RUST_ENABLED="1" \
 STARRUPTURE_ENABLED="1" \
 ABIOTIC_FACTOR_ENABLED="1" \
+ICARUS_ENABLED="1" \
 NITROX_ENABLED="1" \
 NITROX_VERSION="latest" \
 SUBNAUTICA_INSTALL_DIR="/opt/gaming/subnautica" \
@@ -151,6 +156,7 @@ Default openings:
 - Assetto Corsa: `9600/tcp`, `9600/udp`, `8081/tcp`.
 - StarRupture: `7777/udp`.
 - Abiotic Factor: `7777/udp`, `27015/udp`.
+- ICARUS: `17777/udp`, `27015/udp`.
 - Subnautica Nitrox: `11000/udp`, `11000/tcp`.
 
 If you need persistent firewall overrides, copy `vps/configureGaming.env.example` to `vps/configureGaming.env` and edit it before running the script.
@@ -211,6 +217,17 @@ steamcmd \
   +force_install_dir /opt/gaming/abioticfactor \
   +login anonymous \
   +app_update 2857200 validate \
+  +quit
+```
+
+### ICARUS Dedicated Server (AppID `2089300`)
+
+```bash
+steamcmd \
+  +@sSteamCmdForcePlatformType windows \
+  +force_install_dir /opt/gaming/icarus \
+  +login anonymous \
+  +app_update 2089300 validate \
   +quit
 ```
 
