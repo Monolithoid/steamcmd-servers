@@ -135,8 +135,7 @@ NITROX_ARCH="${NITROX_ARCH:-x64}"
 NITROX_INSTALL_DIR="${NITROX_INSTALL_DIR:-/opt/gaming/subnautica-nitrox}"
 NITROX_OWNER="${NITROX_OWNER:-${SERVER_OWNER}}"
 SUBNAUTICA_INSTALL_DIR="${SUBNAUTICA_INSTALL_DIR:-/opt/gaming/subnautica}"
-
-mkdir -p "${LOG_DIR}"
+PREPARED_STEAMCMD_LOG=""
 
 require_command() {
   local command_name="$1"
@@ -147,6 +146,32 @@ require_command() {
 
   fail "Required command not found: ${command_name}"
   return 1
+}
+
+prepare_steamcmd_log() {
+  local requested_log_file="$1"
+  local log_basename=""
+  local fallback_template=""
+
+  PREPARED_STEAMCMD_LOG=""
+
+  if mkdir -p "${LOG_DIR}" 2>/dev/null &&
+    (umask 077 && : > "${requested_log_file}") 2>/dev/null; then
+    PREPARED_STEAMCMD_LOG="${requested_log_file}"
+    return 0
+  fi
+
+  log_basename="$(basename "${requested_log_file}" .log)"
+  fallback_template="${TMPDIR:-/tmp}/${log_basename}.XXXXXXXX.log"
+
+  if ! PREPARED_STEAMCMD_LOG="$(mktemp "${fallback_template}")"; then
+    fail "Unable to create a SteamCMD log in ${LOG_DIR} or ${TMPDIR:-/tmp}"
+    return 1
+  fi
+
+  warn "Unable to write the requested log: ${requested_log_file}"
+  warn "Using temporary log instead: ${PREPARED_STEAMCMD_LOG}"
+  return 0
 }
 
 make_temp_dir() {
@@ -249,6 +274,8 @@ update_steam_game() {
   local log_file=""
   local safe_name=""
   local rc=0
+  local tee_rc=0
+  local pipeline_status=()
   local steamcmd_args=()
 
   timestamp="$(date '+%Y%m%d-%H%M%S')"
@@ -261,9 +288,15 @@ update_steam_game() {
   info "Platform     : ${platform}"
   info "Install dir  : ${install_dir}"
   info "Login mode   : ${login_mode}"
-  info "Log          : ${log_file}"
 
   require_command "${STEAMCMD_BIN}" || return 31
+
+  if ! prepare_steamcmd_log "${log_file}"; then
+    return 32
+  fi
+
+  log_file="${PREPARED_STEAMCMD_LOG}"
+  info "Log          : ${log_file}"
 
   mkdir -p "${install_dir}"
 
@@ -288,7 +321,14 @@ update_steam_game() {
   steamcmd_args+=(+app_update "${app_id}" validate +quit)
 
   "${STEAMCMD_BIN}" "${steamcmd_args[@]}" 2>&1 | tee "${log_file}"
-  rc=${PIPESTATUS[0]}
+  pipeline_status=("${PIPESTATUS[@]}")
+  rc=${pipeline_status[0]}
+  tee_rc=${pipeline_status[1]}
+
+  if [[ ${tee_rc} -ne 0 ]]; then
+    fail "Unable to write the SteamCMD log (tee exit code ${tee_rc})"
+    return 32
+  fi
 
   if [[ ${rc} -ne 0 ]]; then
     fail "SteamCMD returned exit code ${rc}"
