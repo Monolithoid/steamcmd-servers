@@ -100,6 +100,20 @@ SUBNAUTICA_INSTALL_DIR="/opt/gaming/subnautica" \
 ./vps/updateGaming.sh
 ```
 
+`vps/configureGaming.sh` also installs a system cron job that runs the updater
+every day at 02:00. Run the configuration script from the repository's
+permanent location:
+
+```bash
+sudo ./vps/configureGaming.sh
+```
+
+Set `UPDATE_CRON_HOUR` in `vps/configureGaming.env` to select another hour. The
+cron job uses `flock` to prevent overlapping updates and sends its output to
+`/var/log/steamcmd-servers-update.log`. See the
+[cron installation guide](docs/update-workflow.md#daily-vps-update-with-cron)
+for deployment, verification, customization, and removal instructions.
+
 ### PC update and copy script
 
 `pc/updateGaming.sh` updates account-bound Steam apps locally and synchronizes the updated app directories to the VPS over SSH.
@@ -146,9 +160,11 @@ STEAM_GUARD_CODE="<steam_guard_code>" ./pc/updateGaming.sh
 ```
 
 
-### VPS firewall configuration script
+### VPS configuration script
 
-`vps/configureGaming.sh` opens the default game ports on a VPS that uses UFW. It is separate from the update scripts because firewall changes are host configuration, not app updates.
+`vps/configureGaming.sh` opens the default game ports on a VPS that uses UFW and
+installs the daily update cron entry. It is separate from the update scripts
+because these operations configure the host rather than update an application.
 
 Default openings:
 
