@@ -87,6 +87,86 @@ NITROX_VERSION=1.8.1.0 ./vps/updateGaming.sh
 
 The Nitrox updater preserves `Nitrox/saves/` and `Nitrox/server.cfg` during release extraction.
 
+## Daily VPS update with cron
+
+The VPS configuration script `vps/configureGaming.sh` installs a system cron
+entry that runs `vps/updateGaming.sh` every day at 02:00. Install the repository
+in a permanent location first: the cron entry contains the update script's
+absolute path.
+
+Run the updater manually once before scheduling it. This verifies SteamCMD,
+permissions, network access, and the values in `vps/updateGaming.env`:
+
+```bash
+sudo ./vps/updateGaming.sh
+```
+
+Then configure the firewall and install the cron entry in the same operation:
+
+```bash
+sudo ./vps/configureGaming.sh
+```
+
+The configuration script creates `/etc/cron.d/steamcmd-servers-update` with the
+equivalent of this schedule:
+
+```cron
+0 2 * * * root /usr/bin/flock -n /run/lock/steamcmd-servers-update.lock /absolute/path/to/vps/updateGaming.sh >> /var/log/steamcmd-servers-update.log 2>&1
+```
+
+`flock -n` prevents a new update from starting when the preceding run has not
+finished. The job runs as `root` by default because the standard install paths
+under `/opt/gaming` and ownership changes generally require it. Cron uses the
+VPS system time zone; verify it before relying on 02:00 local time:
+
+```bash
+timedatectl
+```
+
+Inspect the installed entry and recent output:
+
+```bash
+sudo cat /etc/cron.d/steamcmd-servers-update
+sudo tail -n 100 /var/log/steamcmd-servers-update.log
+```
+
+The updater continues to write its per-application SteamCMD logs to `LOG_DIR`,
+which defaults to `/tmp/steamcmd-updates`. Configure log rotation for
+`/var/log/steamcmd-servers-update.log` according to the VPS retention policy.
+
+### Cron customization
+
+Settings can be placed in `vps/configureGaming.env`. For example, this runs the
+updater at 03:30 and writes its combined output to another log:
+
+```bash
+UPDATE_CRON_ENABLED="1"
+UPDATE_CRON_HOUR="3"
+UPDATE_CRON_MINUTE="30"
+UPDATE_CRON_LOG_FILE="/var/log/gaming/update.log"
+```
+
+Supported settings are:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `UPDATE_CRON_ENABLED` | `1` | Set to `0` to remove the managed cron entry |
+| `UPDATE_CRON_HOUR` | `2` | Daily execution hour, between `0` and `23` |
+| `UPDATE_CRON_MINUTE` | `0` | Execution minute, between `0` and `59` |
+| `UPDATE_CRON_USER` | `root` | Existing system account that runs the updater |
+| `UPDATE_CRON_FILE` | `/etc/cron.d/steamcmd-servers-update` | Cron definition to create |
+| `UPDATE_SCRIPT` | `vps/updateGaming.sh` beside the configuration script | Absolute updater path |
+| `UPDATE_CRON_LOG_FILE` | `/var/log/steamcmd-servers-update.log` | Combined standard output and error log |
+| `UPDATE_CRON_LOCK_FILE` | `/run/lock/steamcmd-servers-update.lock` | Lock used to prevent overlapping runs |
+
+Run `sudo ./vps/configureGaming.sh` again after changing one of these settings;
+it replaces the managed cron file atomically. To remove the scheduled task,
+set `UPDATE_CRON_ENABLED="0"` in `vps/configureGaming.env`, then rerun:
+
+```bash
+sudo ./vps/configureGaming.sh
+```
+
 ## PC script: account apps and SSH copy
 
 Script: `pc/updateGaming.sh`
@@ -140,11 +220,14 @@ By default, the PC updater installs games in `/opt/gaming/<game>` and synchroniz
 Set `PC_RSYNC_DELETE=0` if you want rsync to avoid deleting files that exist only on the VPS.
 
 
-## VPS firewall configuration
+## VPS host configuration
 
 Script: `vps/configureGaming.sh`
 
-The firewall script opens the default ports exposed by the included `docker-compose.yml` examples. It currently supports UFW. Run it on the VPS after installing UFW and before starting public servers.
+The configuration script opens the default ports exposed by the included
+`docker-compose.yml` examples and installs the automatic update cron entry. Its
+firewall handling currently supports UFW. Run it on the VPS after installing
+UFW and before starting public servers.
 
 Preview mode:
 
