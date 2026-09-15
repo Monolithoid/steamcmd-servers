@@ -123,6 +123,27 @@ VPS system time zone; verify it before relying on 02:00 local time:
 timedatectl
 ```
 
+The generated cron file declares its own `PATH`, including `/usr/games` and
+`/usr/local/games`. Debian and Ubuntu commonly install `steamcmd` in
+`/usr/games`, while cron starts jobs with a smaller environment than an
+interactive shell. Consequently, a `steamcmd: command not found` error from
+cron generally does not mean that `root` cannot use SteamCMD: it means the
+executable's directory was absent from the cron job's `PATH`.
+
+After updating this repository, rerun the configuration script to regenerate
+the existing cron file with the corrected `PATH`:
+
+```bash
+sudo ./vps/configureGaming.sh
+```
+
+For a non-standard installation, set the executable's absolute path in
+`vps/updateGaming.env` instead:
+
+```bash
+STEAMCMD_BIN="/custom/path/steamcmd"
+```
+
 Inspect the installed entry and recent output:
 
 ```bash
