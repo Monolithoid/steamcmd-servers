@@ -390,7 +390,7 @@ write_update_cron_file() {
 
   {
     printf '%s\n' 'SHELL=/bin/bash'
-    printf '%s\n' 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+    printf '%s\n' 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games'
     printf '%s %s * * * %s %s -n %s %s >> %s 2>&1\n' \
       "${UPDATE_CRON_MINUTE}" \
       "${UPDATE_CRON_HOUR}" \
