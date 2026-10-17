@@ -22,6 +22,9 @@ on:
         required: false
         default: "manual rebuild"
 
+permissions:
+  contents: read
+
 jobs:
   build-games:
     runs-on: ubuntu-latest
@@ -39,6 +42,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Login to Docker Hub
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -50,6 +54,6 @@ jobs:
           context: ./games/${{ matrix.game }}
           pull: true
           no-cache: ${{ github.event_name == 'workflow_dispatch' }}
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: |
             monolithoid/${{ matrix.game }}-server:latest
