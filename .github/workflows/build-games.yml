@@ -29,6 +29,7 @@ jobs:
   build-games:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - game: abioticfactor
