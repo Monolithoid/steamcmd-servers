@@ -1,3 +1,10 @@
+<h1>
+  <img src="./assets/steamcmd-servers-icon.png" alt="" width="48" height="48" align="middle">
+  steamcmd-servers by monolithoid
+</h1>
+
+![Docker bases for dedicated game servers on Linux and Wine](./assets/steamcmd-servers-social.jpg)
+
 # steamcmd-servers by monolithoid
 
 The goal of this project is to provide generic Docker bases for dedicated game servers:
