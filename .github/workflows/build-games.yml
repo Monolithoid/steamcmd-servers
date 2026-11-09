@@ -30,16 +30,47 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        game:
-          - abioticfactor
-          - assetto-corsa
-          - icarus
-          - rust
-          - starrupture
-          - subnautica-nitrox
+        include:
+          - game: abioticfactor
+            title: Abiotic Factor dedicated server
+            description: Abiotic Factor dedicated server (Windows build run with Wine)
+          - game: assetto-corsa
+            title: Assetto Corsa dedicated server
+            description: Assetto Corsa dedicated server (Windows build run with Wine)
+          - game: icarus
+            title: Icarus dedicated server
+            description: Icarus dedicated server (Windows build run with Wine)
+          - game: rust
+            title: Rust dedicated server
+            description: Rust dedicated server on the SteamCMD Linux core image
+          - game: starrupture
+            title: StarRupture dedicated server
+            description: StarRupture dedicated server (Windows build run with Wine)
+          - game: subnautica-nitrox
+            title: Subnautica Nitrox server
+            description: Subnautica multiplayer server powered by Nitrox (.NET 9)
+
+    env:
+      IMAGE: monolithoid/${{ matrix.game }}-server
+      IMAGE_DIR: games/${{ matrix.game }}
+      REPO_URL: ${{ github.server_url }}/${{ github.repository }}
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Docker metadata (tags & OCI labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=latest
+          labels: |
+            org.opencontainers.image.title=${{ matrix.title }}
+            org.opencontainers.image.description=${{ matrix.description }}
+            org.opencontainers.image.url=${{ env.REPO_URL }}/tree/${{ github.ref_name }}/${{ env.IMAGE_DIR }}
+            org.opencontainers.image.documentation=${{ env.REPO_URL }}/blob/${{ github.ref_name }}/${{ env.IMAGE_DIR }}/README.md
+            org.opencontainers.image.vendor=monolithoid
 
       - name: Login to Docker Hub
         if: github.event_name != 'pull_request'
@@ -51,9 +82,39 @@ jobs:
       - name: Build & Push game image
         uses: docker/build-push-action@v6
         with:
-          context: ./games/${{ matrix.game }}
+          context: ./${{ env.IMAGE_DIR }}
           pull: true
           no-cache: ${{ github.event_name == 'workflow_dispatch' }}
           push: ${{ github.event_name != 'pull_request' }}
-          tags: |
-            monolithoid/${{ matrix.game }}-server:latest
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Compose Docker Hub overview
+        if: github.event_name != 'pull_request'
+        run: |
+          base_image="$(grep -m1 -oE 'monolithoid/steamcmd-[a-z]+-core' "$IMAGE_DIR/Dockerfile" || true)"
+          {
+            cat "$IMAGE_DIR/README.md"
+            echo
+            echo "---"
+            echo
+            echo "## Links"
+            echo
+            echo "- Source of this image: [${IMAGE_DIR}](${REPO_URL}/tree/${GITHUB_REF_NAME}/${IMAGE_DIR})"
+            echo "- Dockerfile: [${IMAGE_DIR}/Dockerfile](${REPO_URL}/blob/${GITHUB_REF_NAME}/${IMAGE_DIR}/Dockerfile)"
+            if [ -n "$base_image" ]; then
+              echo "- Base image: [${base_image}](https://hub.docker.com/r/${base_image})"
+            fi
+            echo "- Full project and the other game server images: [${GITHUB_REPOSITORY}](${REPO_URL})"
+            echo "- Issues and suggestions: [GitHub issues](${REPO_URL}/issues)"
+          } > "$RUNNER_TEMP/dockerhub-README.md"
+
+      - name: Update Docker Hub description
+        if: github.event_name != 'pull_request'
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ env.IMAGE }}
+          short-description: ${{ matrix.description }}
+          readme-filepath: ${{ runner.temp }}/dockerhub-README.md
